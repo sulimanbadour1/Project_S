@@ -50,9 +50,6 @@ def map_camera_focus_points(mesh, radius=100, num_points=12, levels=3):
 
 
 def visualize_camera_path_with_circle(ax, mesh, camera_points, radius):
-    """
-    Visualize the circular path and camera points in 2D.
-    """
     projected_model = project_model_to_2d(mesh)
     ax.scatter(
         projected_model[:, 0],
@@ -60,8 +57,6 @@ def visualize_camera_path_with_circle(ax, mesh, camera_points, radius):
         alpha=0.5,
         label="Model Projection",
     )
-
-    # Draw the circle
     center_x, center_y = mesh.centroid[0], mesh.centroid[1]
     circle = plt.Circle(
         (center_x, center_y),
@@ -72,8 +67,6 @@ def visualize_camera_path_with_circle(ax, mesh, camera_points, radius):
         label="Camera Path Circle",
     )
     ax.add_artist(circle)
-
-    # Draw the camera points
     camera_points = np.array(camera_points)
     ax.plot(camera_points[:, 0], camera_points[:, 1], "ro", label="Camera Points")
     ax.set_aspect("equal", "datalim")
@@ -115,16 +108,14 @@ def animate_camera_movement_2d(ax, camera_points):
 
 
 def animate_camera_movement_3d(mesh, camera_points):
-    """
-    Create a 3D animation of the camera moving around the model at multiple heights with interactive controls.
-    """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+    ax.set_title("3D Camera Movement Simulation")
 
     # Plot the model
     vertices = mesh.vertices
     faces = mesh.faces
-    ax.plot_trisurf(
+    mesh_plot = ax.plot_trisurf(
         vertices[:, 0],
         vertices[:, 1],
         vertices[:, 2],
@@ -135,7 +126,7 @@ def animate_camera_movement_3d(mesh, camera_points):
 
     # Camera path setup
     camera_points = np.array(camera_points)
-    (line,) = ax.plot([], [], [], "r-", label="Camera Movement", linewidth=2)
+    (line,) = ax.plot([], [], [], "r-", label="Camera Path", linewidth=2)
     (point,) = ax.plot([], [], [], "ro")
 
     # Initialize animation
@@ -146,35 +137,37 @@ def animate_camera_movement_3d(mesh, camera_points):
         point.set_3d_properties([])
         return line, point
 
+    # Animation update function
     def animate(i):
         x, y, z = camera_points[:, 0], camera_points[:, 1], camera_points[:, 2]
         line.set_data(x[: i % len(x) + 1], y[: i % len(y) + 1])
         line.set_3d_properties(z[: i % len(z) + 1])
-        point.set_data(x[i % len(x)], y[i % len(y)])
-        point.set_3d_properties(z[i % len(z)])
+        point.set_data([x[i % len(x)]], [y[i % len(y)]])
+        point.set_3d_properties([z[i % len(z)]])
         return line, point
 
+    # Animation control
     anim = FuncAnimation(
-        fig,
-        animate,
-        init_func=init,
-        frames=len(camera_points),
-        interval=200,
-        blit=False,
+        fig, animate, init_func=init, frames=len(camera_points), interval=50, blit=False
     )
 
-    # Create control panel for speed and viewpoint
+    # Adding sliders for animation control
     axcolor = "lightgoldenrodyellow"
-    axfreq = fig.add_axes([0.2, 0.02, 0.65, 0.03], facecolor=axcolor)
-    sfreq = widgets.Slider(axfreq, "Speed", 0.1, 2.0, valinit=1)
+    ax_speed = fig.add_axes([0.2, 0.01, 0.65, 0.03], facecolor=axcolor)
+    slider_speed = widgets.Slider(ax_speed, "Speed", 0.1, 2.0, valinit=1)
 
-    def update(val):
-        anim.event_source.interval = 500 / val
+    # Speed control function
+    def update_speed(val):
+        anim.event_source.interval = 1000 / val
 
-    sfreq.on_changed(update)
+    slider_speed.on_changed(update_speed)
 
     plt.legend()
     plt.show()
+
+
+def write_camera_points_to_file(camera_points, filename="camera_points.txt"):
+    np.savetxt(filename, camera_points, fmt="%f", header="X Y Z")
 
 
 def main_analysis_and_path_generation(file_path):
@@ -197,6 +190,9 @@ def main_analysis_and_path_generation(file_path):
 
     # Animate the camera movement in 3D
     animate_camera_movement_3d(mesh, camera_points)
+
+    # Write points to file
+    write_camera_points_to_file(np.array(camera_points), "camera_points.txt")
 
 
 # Specify the model path and start the process
