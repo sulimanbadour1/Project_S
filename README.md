@@ -1,4 +1,4 @@
-# README for Project_S
+# Project_S ( Camera control system for desktop 3d printers)
 
 
 # Develop Camera Path Mapping Algorithm
@@ -16,6 +16,7 @@ Ensure you have the following Python packages installed:
 - `numpy`
 - `matplotlib`
 - `trimesh`
+- `pyglet<2`
 
 You can install these packages via pip:
 ```pip install numpy matplotlib trimesh```
