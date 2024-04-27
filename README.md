@@ -1,5 +1,8 @@
 # README for Project_S
 
+
+# Develop Camera Path Mapping Algorithm
+
 ## Overview
 This project involves the development of a camera path mapping algorithm to create a detailed simulation of camera movements around a 3D model. The simulation is designed to help in visualizing camera coverage for monitoring or inspection purposes, ensuring complete 360-degree visibility of the object being examined.
 
@@ -23,7 +26,7 @@ You can install these packages via pip:
 ## Usage
 To run this script, make sure you have a 3D model file in STL format. Update the model_path in the script to point to your model file location.
 - **Setting up the model path:** `model_path = "path_to_your_model/model_file.stl"`
--**Running the script:** `python project_s.py`
+- **Running the script:** `python project_s.py`
 - **Interact with the simulation:**
 Use the slider at the bottom of the 3D animation window to adjust the animation speed.
 Watch both 2D and 3D animations to understand the camera's coverage.
