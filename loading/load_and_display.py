@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import trimesh
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.widgets as widgets
 
 
 def project_model_to_2d(mesh):
@@ -115,7 +116,7 @@ def animate_camera_movement_2d(ax, camera_points):
 
 def animate_camera_movement_3d(mesh, camera_points):
     """
-    Create a 3D animation of the camera moving around the model at multiple heights.
+    Create a 3D animation of the camera moving around the model at multiple heights with interactive controls.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -137,6 +138,7 @@ def animate_camera_movement_3d(mesh, camera_points):
     (line,) = ax.plot([], [], [], "r-", label="Camera Movement", linewidth=2)
     (point,) = ax.plot([], [], [], "ro")
 
+    # Initialize animation
     def init():
         line.set_data([], [])
         line.set_3d_properties([])
@@ -160,6 +162,17 @@ def animate_camera_movement_3d(mesh, camera_points):
         interval=200,
         blit=False,
     )
+
+    # Create control panel for speed and viewpoint
+    axcolor = "lightgoldenrodyellow"
+    axfreq = fig.add_axes([0.2, 0.02, 0.65, 0.03], facecolor=axcolor)
+    sfreq = widgets.Slider(axfreq, "Speed", 0.1, 2.0, valinit=1)
+
+    def update(val):
+        anim.event_source.interval = 500 / val
+
+    sfreq.on_changed(update)
+
     plt.legend()
     plt.show()
 
