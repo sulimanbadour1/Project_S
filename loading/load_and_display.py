@@ -11,20 +11,21 @@ def project_model_to_2d(mesh):
     return mesh.vertices[:, :2]
 
 
-def generate_circular_camera_points(mesh, radius=100, num_points=12):
+def generate_circular_camera_points(mesh, radius=100, num_points=12, levels=3):
     """
-    Generate camera points in a circular path around the model.
+    Generate camera points in multiple circular paths around the model based on its height.
     """
-    center_x, center_y = mesh.centroid[0], mesh.centroid[1]
-    angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    return [
-        (
-            center_x + radius * np.cos(angle),
-            center_y + radius * np.sin(angle),
-            mesh.bounds.mean(axis=0)[2],
-        )
-        for angle in angles
-    ]
+    min_z, max_z = mesh.bounds[:, 2]
+    z_values = np.linspace(min_z, max_z, levels)
+    points = []
+    for z in z_values:
+        center_x, center_y = mesh.centroid[0], mesh.centroid[1]
+        angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+        points += [
+            (center_x + radius * np.cos(angle), center_y + radius * np.sin(angle), z)
+            for angle in angles
+        ]
+    return points
 
 
 def visualize_camera_path_with_circle(ax, mesh, camera_points, radius):
@@ -93,13 +94,12 @@ def animate_camera_movement(fig, ax, camera_points):
 
 def animate_camera_movement_3d(mesh, camera_points):
     """
-    Create a 3D animation of the camera moving around the model.
+    Create a 3D animation of the camera moving around the model at multiple heights.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
 
     # Plot the model
-    # Extract vertices and faces from the mesh for plotting
     vertices = mesh.vertices
     faces = mesh.faces
     ax.plot_trisurf(
@@ -135,37 +135,70 @@ def animate_camera_movement_3d(mesh, camera_points):
         fig,
         animate,
         init_func=init,
-        frames=len(camera_points) * 2,
-        interval=500,
-        blit=False,  # Set blit=True if animation is slow, but might not work in 3D
+        frames=len(camera_points),
+        interval=200,
+        blit=False,
     )
+    plt.legend()
+    plt.show()
 
+
+def animate_camera_movement_2d(ax, camera_points):
+    """
+    Create a 2D animation of the camera moving along the path defined by the selected points.
+    """
+    camera_points = np.array(camera_points)
+    (line,) = ax.plot([], [], "r-", label="Camera Movement", linewidth=2)
+    (point,) = ax.plot([], [], "ro")
+
+    def init():
+        line.set_data([], [])
+        point.set_data([], [])
+        return line, point
+
+    def animate(i):
+        x, y, z = camera_points[:, 0], camera_points[:, 1], camera_points[:, 2]
+        line.set_data(x[: i % len(x) + 1], y[: i % len(y) + 1])
+        point.set_data(x[i % len(x)], y[i % len(y)])
+        return line, point
+
+    anim = FuncAnimation(
+        ax.figure,
+        animate,
+        init_func=init,
+        frames=len(camera_points),
+        interval=200,
+        blit=False,
+    )
+    ax.set_xlabel("X Coordinate")
+    ax.set_ylabel("Y Coordinate")
+    ax.set_title("Camera Movement in 2D")
     plt.legend()
     plt.show()
 
 
 def main_analysis_and_path_generation(file_path):
     """
-    Main function to load the model, generate circular camera points, and visualize.
+    Load the model, generate circular camera points for each height level, and visualize in 3D.
     """
     mesh = trimesh.load(file_path)
     print(f"Is the mesh watertight? {mesh.is_watertight}")
 
-    # Generate camera points in a circular path
-    radius = 100  # Set radius to 100 units (10 cm)
-    num_points = 12  # Number of points on the circle
-    camera_points = generate_circular_camera_points(mesh, radius, num_points)
+    # Generate camera points with multiple levels
+    radius = 100  # radius in units
+    num_points = 12  # points per circle
+    levels = 5  # number of levels based on height
+    camera_points = generate_circular_camera_points(mesh, radius, num_points, levels)
 
-    # Setup for visualization
-    fig, ax = plt.subplots()
-    visualize_camera_path_with_circle(ax, mesh, camera_points, radius)
+    # Set up for 2D visualization and animation
+    fig2d, ax2d = plt.subplots()
+    visualize_camera_path_with_circle(ax2d, mesh, camera_points, radius)
+    animate_camera_movement_2d(ax2d, camera_points)
+
     # Animate the camera movement in 3D
     animate_camera_movement_3d(mesh, camera_points)
 
-    # Animate the camera movement
-    animate_camera_movement(fig, ax, camera_points)
-
 
 # Specify the model path and start the process
-model_path = "logo3d.stl"
+model_path = "loading/logo3d.stl"
 main_analysis_and_path_generation(model_path)
