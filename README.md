@@ -1,7 +1,7 @@
 # Project_S ( Camera control system for desktop 3d printers)
 
 
-# Develop Camera Path Mapping Algorithm
+# 1- Develop Camera Path Mapping Algorithm
 
 ## Overview
 This project involves the development of a camera path mapping algorithm to create a detailed simulation of camera movements around a 3D model. The simulation is designed to help in visualizing camera coverage for monitoring or inspection purposes, ensuring complete 360-degree visibility of the object being examined.
@@ -38,4 +38,4 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 - Camera points are written to camera_points.txt in the current directory, which can be used for further processing or control systems.
 
 ## Demo 
-<img src="camera_movement_3d.mp4" alt="demo">
+<img src="camera_movement_3d.gif" alt="demo">

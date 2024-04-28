@@ -287,7 +287,9 @@ def main_analysis_and_path_generation(file_path):
     animate_camera_movement_2d(ax2d, camera_points)
 
     # Specify the path for the saved animation file
-    save_path = "camera_movement_3d.mp4"  # or "camera_movement_3d.gif" for GIF format
+    save_path = (
+        "camera_movement_3d.gif"  # or "camera_movement_3d.gif/.mp4" for GIF format
+    )
     animate_camera_movement_3d(mesh, camera_points, time_per_cycle, save_path)
 
     total_time = time.time() - start_time
