@@ -4,6 +4,54 @@ import trimesh
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.widgets as widgets
+import tkinter as tk
+from tkinter import simpledialog
+import time
+
+
+### Get the user input
+def get_user_input():
+    """
+    Opens a GUI to prompt the user for parameters.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+
+    radius = simpledialog.askinteger(
+        "Input",
+        "Enter the radius (mm):",
+        parent=root,
+        minvalue=10,
+        maxvalue=200,
+        initialvalue=100,
+    )
+    num_points = simpledialog.askinteger(
+        "Input",
+        "Enter the number of points per circle:",
+        parent=root,
+        minvalue=3,
+        maxvalue=100,
+        initialvalue=12,
+    )
+    levels = simpledialog.askinteger(
+        "Input",
+        "Enter the number of levels:",
+        parent=root,
+        minvalue=1,
+        maxvalue=10,
+        initialvalue=3,
+    )
+    time_per_cycle = simpledialog.askinteger(
+        "Input",
+        "Enter the time per cycle (seconds):",
+        parent=root,
+        minvalue=1,
+        maxvalue=240,
+        initialvalue=60,
+    )
+
+    root.destroy()
+    return radius, num_points, levels, time_per_cycle
 
 
 def project_model_to_2d(mesh):
@@ -13,7 +61,7 @@ def project_model_to_2d(mesh):
     return mesh.vertices[:, :2]
 
 
-def generate_circular_camera_points(mesh, radius=100, num_points=12, levels=3):
+def generate_circular_camera_points(mesh, radius, num_points, levels):
     """
     Generate camera points in multiple circular paths around the model based on its height.
     """
@@ -23,11 +71,17 @@ def generate_circular_camera_points(mesh, radius=100, num_points=12, levels=3):
     for z in z_values:
         center_x, center_y = mesh.centroid[0], mesh.centroid[1]
         angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-        points += [
-            (center_x + radius * np.cos(angle), center_y + radius * np.sin(angle), z)
-            for angle in angles
-        ]
-    return points
+        points.extend(
+            [
+                (
+                    center_x + radius * np.cos(angle),
+                    center_y + radius * np.sin(angle),
+                    z,
+                )
+                for angle in angles
+            ]
+        )
+    return np.array(points)
 
 
 def map_camera_focus_points(mesh, radius=100, num_points=12, levels=3):
@@ -107,15 +161,24 @@ def animate_camera_movement_2d(ax, camera_points):
     plt.show()
 
 
-def animate_camera_movement_3d(mesh, camera_points):
-    fig = plt.figure()
+def setup_zoom_controls(ax, fig):
+    ax_zoom = fig.add_axes([0.2, 0.05, 0.65, 0.03], facecolor="lightgoldenrodyellow")
+    zoom_slider = widgets.Slider(ax_zoom, "Zoom", 0.5, 2.0, valinit=1.0)
+
+    def update_zoom(val):
+        ax.auto_scale_xyz([0, val * 100], [0, val * 100], [0, val * 100])
+
+    zoom_slider.on_changed(update_zoom)
+
+
+def animate_camera_movement_3d(mesh, camera_points, time_per_cycle):
+    fig = plt.figure(figsize=(10, 8))  # Enlarge the figure
     ax = fig.add_subplot(111, projection="3d")
     ax.set_title("3D Camera Movement Simulation")
 
-    # Plot the model
     vertices = mesh.vertices
     faces = mesh.faces
-    mesh_plot = ax.plot_trisurf(
+    ax.plot_trisurf(
         vertices[:, 0],
         vertices[:, 1],
         vertices[:, 2],
@@ -124,12 +187,9 @@ def animate_camera_movement_3d(mesh, camera_points):
         alpha=0.5,
     )
 
-    # Camera path setup
-    camera_points = np.array(camera_points)
     (line,) = ax.plot([], [], [], "r-", label="Camera Path", linewidth=2)
     (point,) = ax.plot([], [], [], "ro")
 
-    # Initialize animation
     def init():
         line.set_data([], [])
         line.set_3d_properties([])
@@ -137,7 +197,6 @@ def animate_camera_movement_3d(mesh, camera_points):
         point.set_3d_properties([])
         return line, point
 
-    # Animation update function
     def animate(i):
         x, y, z = camera_points[:, 0], camera_points[:, 1], camera_points[:, 2]
         line.set_data(x[: i % len(x) + 1], y[: i % len(y) + 1])
@@ -146,21 +205,28 @@ def animate_camera_movement_3d(mesh, camera_points):
         point.set_3d_properties([z[i % len(z)]])
         return line, point
 
-    # Animation control
+    interval = (time_per_cycle * 1000) / len(camera_points)
     anim = FuncAnimation(
-        fig, animate, init_func=init, frames=len(camera_points), interval=50, blit=False
+        fig,
+        animate,
+        init_func=init,
+        frames=len(camera_points),
+        interval=interval,
+        blit=False,
     )
 
-    # Adding sliders for animation control
     axcolor = "lightgoldenrodyellow"
-    ax_speed = fig.add_axes([0.2, 0.01, 0.65, 0.03], facecolor=axcolor)
-    slider_speed = widgets.Slider(ax_speed, "Speed", 0.1, 2.0, valinit=1)
+    ax_zoom = fig.add_axes([0.2, 0.01, 0.65, 0.03], facecolor=axcolor)
+    zoom_slider = widgets.Slider(ax_zoom, "Zoom", 0.1, 10.0, valinit=1.0)
 
-    # Speed control function
-    def update_speed(val):
-        anim.event_source.interval = 1000 / val
+    def update_zoom(val):
+        ax.set_xlim([mesh.centroid[0] - val * 50, mesh.centroid[0] + val * 50])
+        ax.set_ylim([mesh.centroid[1] - val * 50, mesh.centroid[1] + val * 50])
+        ax.set_zlim(
+            [mesh.bounds[:, 2].min() - val * 50, mesh.bounds[:, 2].max() + val * 50]
+        )
 
-    slider_speed.on_changed(update_speed)
+    zoom_slider.on_changed(update_zoom)
 
     plt.legend()
     plt.show()
@@ -174,13 +240,13 @@ def main_analysis_and_path_generation(file_path):
     """
     Load the model, generate circular camera points for each height level, and visualize in 2D and 3D.
     """
+    # Get user input
+    radius, num_points, levels, time_per_cycle = get_user_input()
+    start_time = time.time()
+
     mesh = trimesh.load(file_path)
     print(f"Is the mesh watertight? {mesh.is_watertight}")
 
-    # Generate camera points with multiple levels
-    radius = 100  # radius in units
-    num_points = 12  # points per circle
-    levels = 5  # number of levels based on height
     camera_points = generate_circular_camera_points(mesh, radius, num_points, levels)
 
     # Set up for 2D visualization and animation
@@ -189,7 +255,11 @@ def main_analysis_and_path_generation(file_path):
     animate_camera_movement_2d(ax2d, camera_points)
 
     # Animate the camera movement in 3D
-    animate_camera_movement_3d(mesh, camera_points)
+    animate_camera_movement_3d(mesh, camera_points, time_per_cycle)
+
+    total_time = time.time() - start_time
+    print(f"Total processing time: {total_time:.2f} seconds")
+    print(f"Time per cycle: {time_per_cycle} seconds per cycle")
 
     # Write points to file
     write_camera_points_to_file(np.array(camera_points), "camera_points.txt")
