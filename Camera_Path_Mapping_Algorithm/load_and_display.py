@@ -292,14 +292,14 @@ def main_analysis_and_path_generation(file_path):
     )
     animate_camera_movement_3d(mesh, camera_points, time_per_cycle, save_path)
 
+    # Write points to file
+    write_camera_points_to_file(camera_points, "camera_points.txt")
+
     total_time = time.time() - start_time
     print(f"Total processing time: {total_time:.2f} seconds")
     print(f"Time per cycle: {time_per_cycle} seconds per cycle")
     print(f"Initial Z distance: {initial_z} mm")
     print(f"Z distance between levels: {z_distance} mm")
-
-    # Write points to file
-    write_camera_points_to_file(camera_points, "camera_points.txt")
 
 
 # Specify the model path and start the process
