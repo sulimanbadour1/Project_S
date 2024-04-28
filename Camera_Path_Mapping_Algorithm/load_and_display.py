@@ -303,5 +303,5 @@ def main_analysis_and_path_generation(file_path):
 
 
 # Specify the model path and start the process
-model_path = "loading/logo3d.stl"
+model_path = "Camera_Path_Mapping_Algorithm\logo3d.stl"
 main_analysis_and_path_generation(model_path)
