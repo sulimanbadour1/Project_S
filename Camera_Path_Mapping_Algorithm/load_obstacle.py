@@ -58,27 +58,44 @@ def get_user_input():
     return radius, num_points, levels, z_distance, initial_z
 
 
+import numpy as np
+import trimesh
+
+
 def generate_circular_camera_points(
     mesh, radius, num_points, levels, initial_z, z_distance
 ):
     """
     Generate camera points in multiple circular paths around the model based on its height,
-    starting at initial_z and separating each level by z_distance. Camera points generated
-    between 10 degrees to 340 degrees, starting from the right to the left for the first level
-    and then alternating directions by level.
+    starting at initial_z and separating each level by z_distance.
+    Each level begins at 190 degrees and completes a 340-degree sweep. For the next Z-level,
+    the direction is reversed until it returns to the original start point of the previous level.
     """
-    start_angle = np.radians(10)  # Convert 10 degrees to radians
-    end_angle = np.radians(340)  # Convert 340 degrees to radians
+    start_angle_deg = 190  # Start at 190 degrees
+    total_sweep_deg = 340  # Sweep of 340 degrees
+
     z_values = [initial_z + i * z_distance for i in range(levels)]
     points = []
     for i, z in enumerate(z_values):
         center_x, center_y = mesh.centroid[0], mesh.centroid[1]
+        start_angle_rad = np.radians(start_angle_deg)
+        total_sweep_rad = np.radians(total_sweep_deg)
+
         if i % 2 == 0:
-            # Even levels (starting with the first): rotate from right to left (340 to 10 degrees)
-            angles = np.linspace(end_angle, start_angle, num_points, endpoint=True)
+            # Even levels: rotate clockwise from 190 degrees
+            angles = start_angle_rad + np.linspace(
+                0, total_sweep_rad, num_points, endpoint=True
+            )
         else:
-            # Odd levels: rotate from left to right (10 to 340 degrees)
-            angles = np.linspace(start_angle, end_angle, num_points, endpoint=True)
+            # Odd levels: rotate anticlockwise, returning to the start point of the last level (190 degrees)
+            end_angle_rad = (start_angle_rad + total_sweep_rad) % (2 * np.pi)
+            angles = end_angle_rad - np.linspace(
+                0, total_sweep_rad, num_points, endpoint=True
+            )
+
+        # Adjust angles to ensure they wrap correctly around the circle
+        angles = np.mod(angles, 2 * np.pi)
+
         points.extend(
             [
                 (
