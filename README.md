@@ -36,3 +36,6 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 ## Output
 - The script will visualize the camera paths in 2D and 3D.
 - Camera points are written to camera_points.txt in the current directory, which can be used for further processing or control systems.
+
+## Demo 
+<img src="camera_movement_3d.mp4" alt="demo">

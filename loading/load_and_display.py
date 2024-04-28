@@ -42,6 +42,14 @@ def get_user_input():
         maxvalue=10,
         initialvalue=3,
     )
+    z_distance = simpledialog.askfloat(
+        "Input",
+        "Enter the Z distance between levels (mm):",
+        parent=root,
+        minvalue=1.0,
+        maxvalue=50.0,
+        initialvalue=10.0,
+    )
     time_per_cycle = simpledialog.askinteger(
         "Input",
         "Enter the time per cycle (seconds):",
@@ -60,7 +68,7 @@ def get_user_input():
     )
 
     root.destroy()
-    return radius, num_points, levels, time_per_cycle, initial_z
+    return radius, num_points, levels, z_distance, time_per_cycle, initial_z
 
 
 def project_model_to_2d(mesh):
@@ -70,15 +78,13 @@ def project_model_to_2d(mesh):
     return mesh.vertices[:, :2]
 
 
-def generate_circular_camera_points(mesh, radius, num_points, levels, initial_z):
+def generate_circular_camera_points(
+    mesh, radius, num_points, levels, initial_z, z_distance
+):
     """
-    Generate camera points in multiple circular paths around the model based on its height, starting at initial_z.
+    Generate camera points in multiple circular paths around the model based on its height, starting at initial_z and separating each level by z_distance.
     """
-    min_z = (
-        mesh.bounds[0, 2] + initial_z
-    )  # Start from the initial Z distance above the minimum bound
-    max_z = mesh.bounds[1, 2]
-    z_values = np.linspace(min_z, max_z, levels)
+    z_values = [initial_z + i * z_distance for i in range(levels)]
     points = []
     for z in z_values:
         center_x, center_y = mesh.centroid[0], mesh.centroid[1]
@@ -263,17 +269,16 @@ def write_camera_points_to_file(camera_points, filename="camera_points.txt"):
 
 def main_analysis_and_path_generation(file_path):
     """
-    Load the model, generate circular camera points for each height level, and visualize in 2D and 3D.
+    Load the model, prompt for parameters, generate camera points, and animate.
     """
-    # Get user input
-    radius, num_points, levels, time_per_cycle, initial_z = get_user_input()
-    start_time = time.time()
+    radius, num_points, levels, z_distance, time_per_cycle, initial_z = get_user_input()
 
+    start_time = time.time()
     mesh = trimesh.load(file_path)
     print(f"Is the mesh watertight? {mesh.is_watertight}")
 
     camera_points = generate_circular_camera_points(
-        mesh, radius, num_points, levels, initial_z
+        mesh, radius, num_points, levels, initial_z, z_distance
     )
 
     # Set up for 2D visualization and animation
@@ -281,16 +286,18 @@ def main_analysis_and_path_generation(file_path):
     visualize_camera_path_with_circle(ax2d, mesh, camera_points, radius)
     animate_camera_movement_2d(ax2d, camera_points)
 
-    # Animate the camera movement in 3D
+    # Specify the path for the saved animation file
     save_path = "camera_movement_3d.mp4"  # or "camera_movement_3d.gif" for GIF format
     animate_camera_movement_3d(mesh, camera_points, time_per_cycle, save_path)
 
     total_time = time.time() - start_time
     print(f"Total processing time: {total_time:.2f} seconds")
     print(f"Time per cycle: {time_per_cycle} seconds per cycle")
+    print(f"Initial Z distance: {initial_z} mm")
+    print(f"Z distance between levels: {z_distance} mm")
 
     # Write points to file
-    write_camera_points_to_file(np.array(camera_points), "camera_points.txt")
+    write_camera_points_to_file(camera_points, "camera_points.txt")
 
 
 # Specify the model path and start the process
