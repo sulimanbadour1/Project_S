@@ -71,6 +71,25 @@ def get_user_input():
     return radius, num_points, levels, z_distance, time_per_cycle, initial_z
 
 
+def load_stl_file(file_path, scale=1.0):
+    """
+    Load the STL file with optional scaling and center it at the origin with the bottom face aligned with the z=0 plane.
+    """
+    mesh = trimesh.load(file_path)
+
+    # Scale the mesh
+    mesh.apply_scale(scale)
+
+    # Center the mesh at the origin
+    mesh.vertices -= mesh.vertices.mean(axis=0)
+
+    # Translate the mesh to align with the z=0 plane
+    min_z = np.min(mesh.vertices[:, 2])
+    mesh.vertices[:, 2] -= min_z
+
+    return mesh
+
+
 def project_model_to_2d(mesh):
     """
     Project the 3D model onto the 2D XY plane.
@@ -294,10 +313,11 @@ def main_analysis_and_path_generation(file_path):
     """
     Load the model, prompt for parameters, generate camera points, and animate.
     """
+    scale_factor = 0.1  # Adjust this value as needed
     radius, num_points, levels, z_distance, time_per_cycle, initial_z = get_user_input()
 
     start_time = time.time()
-    mesh = trimesh.load(file_path)
+    mesh = load_stl_file(file_path)
     print(f"Is the mesh watertight? {mesh.is_watertight}")
 
     camera_points = generate_circular_camera_points(
@@ -326,5 +346,5 @@ def main_analysis_and_path_generation(file_path):
 
 
 # Specify the model path and start the process
-model_path = "Camera_Path_Mapping_Algorithm\logo3d.stl"
+model_path = "Camera_Path_Mapping_Algorithm/logo3d.stl"
 main_analysis_and_path_generation(model_path)

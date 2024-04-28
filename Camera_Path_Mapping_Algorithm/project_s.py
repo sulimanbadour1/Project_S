@@ -13,12 +13,31 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QFileDialog,
     QMessageBox,
+    QInputDialog,
 )
 from PyQt5.QtCore import Qt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import trimesh
-import pandas as pd
+
+
+def load_stl_file(file_path, scale=1.0):
+    """
+    Load the STL file with optional scaling and center it at the origin with the bottom face aligned with the z=0 plane.
+    """
+    mesh = trimesh.load(file_path)
+
+    # Scale the mesh
+    mesh.apply_scale(scale)
+
+    # Center the mesh at the origin
+    mesh.vertices -= mesh.vertices.mean(axis=0)
+
+    # Translate the mesh to align with the z=0 plane
+    min_z = np.min(mesh.vertices[:, 2])
+    mesh.vertices[:, 2] -= min_z
+
+    return mesh
 
 
 class Window(QMainWindow):
@@ -42,23 +61,18 @@ class Window(QMainWindow):
         layout = QVBoxLayout()
         widget.setLayout(layout)
 
-        # Initial placeholder content
         self.info_label = QLabel("Loading... Please open an STL file to start.")
         layout.addWidget(self.info_label)
 
-        # Canvas Setup
         self.canvas = FigureCanvas(plt.figure())
         layout.addWidget(self.canvas)
 
-        # Sliders and labels
         self.setupSliders(layout)
 
-        # Parameter Display
         self.parameter_display = QLineEdit(self)
         self.parameter_display.setReadOnly(True)
         layout.addWidget(self.parameter_display)
 
-        # Update and File Selection Buttons
         self.update_button = QPushButton("Update Simulation")
         self.update_button.clicked.connect(self.update_plot)
         layout.addWidget(self.update_button)
@@ -67,8 +81,8 @@ class Window(QMainWindow):
         self.file_button.clicked.connect(self.load_stl_file)
         layout.addWidget(self.file_button)
 
-        self.export_button = QPushButton("Export Points to CSV")
-        self.export_button.clicked.connect(self.export_points_to_csv)
+        self.export_button = QPushButton("Export Points to Text")
+        self.export_button.clicked.connect(self.export_points_to_text)
         layout.addWidget(self.export_button)
 
         self.setGeometry(300, 300, 800, 600)
@@ -77,19 +91,14 @@ class Window(QMainWindow):
 
     def show_startup_message(self):
         self.info_label.setText(
-            f"Welcome to Project_S by \nThis program simulates camera paths around 3D models. Load an STL file to start."
+            "Welcome to Project_S by Suli1man - This program simulates camera paths around 3D models. Load an STL file to start."
         )
-
-    def show_notification(self, message):
-        QMessageBox.information(self, "Notification", message)
 
     def setupSliders(self, layout):
         sliders_layout = QHBoxLayout()
         layout.addLayout(sliders_layout)
-
-        # Creating sliders
         self.radius_slider = self.create_slider(
-            10, 200, self.radius, "Radius (mm):", sliders_layout, self.update_radius
+            10, 500, self.radius, "Radius (mm):", sliders_layout, self.update_radius
         )
         self.points_slider = self.create_slider(
             3,
@@ -145,6 +154,127 @@ class Window(QMainWindow):
         layout.addWidget(slider)
         return slider
 
+    def update_plot(self):
+        if not hasattr(self, "ax"):
+            self.create_plot()
+        else:
+            self.scatter.remove()
+            camera_points = self.generate_circular_camera_points(
+                self.mesh,
+                self.radius,
+                self.num_points,
+                self.levels,
+                self.initial_z,
+                self.z_distance,
+            )
+            self.scatter = self.ax.scatter(
+                camera_points[:, 0],
+                camera_points[:, 1],
+                camera_points[:, 2],
+                color="red",
+            )
+        self.canvas.draw()
+
+    def create_plot(self):
+        self.ax = self.canvas.figure.add_subplot(111, projection="3d")
+        if self.mesh:
+            self.ax.plot_trisurf(
+                self.mesh.vertices[:, 0],
+                self.mesh.vertices[:, 1],
+                self.mesh.vertices[:, 2],
+                triangles=self.mesh.faces,
+                color="grey",
+                alpha=0.5,
+            )
+        camera_points = self.generate_circular_camera_points(
+            self.mesh,
+            self.radius,
+            self.num_points,
+            self.levels,
+            self.initial_z,
+            self.z_distance,
+        )
+        self.scatter = self.ax.scatter(
+            camera_points[:, 0], camera_points[:, 1], camera_points[:, 2], color="red"
+        )
+        self.canvas.draw()
+
+    def load_stl_file(self):
+        filename, _ = QFileDialog.getOpenFileName(
+            self, "Open STL file", "", "STL Files (*.stl)"
+        )
+        if filename:
+            scale = self.get_user_input()
+            self.mesh = load_stl_file(filename, scale)
+            self.update_plot()
+            self.info_label.hide()
+
+    def get_user_input(self):
+        # Define a method to get user input for scaling factor
+        scale, okPressed = QInputDialog.getDouble(
+            self, "Get Scaling Factor", "Enter the scaling factor:", 1.0, 0.1, 100.0, 1
+        )
+        if okPressed:
+            return scale
+        else:
+            return 1.0  # Default to no scaling if user cancels
+
+    def export_points_to_text(self):
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Save File", "", "Text Files (*.txt)"
+        )
+        if filename:
+            try:
+                camera_points = self.generate_circular_camera_points(
+                    self.mesh,
+                    self.radius,
+                    self.num_points,
+                    self.levels,
+                    self.initial_z,
+                    self.z_distance,
+                )
+                with open(filename, "w") as f:
+                    for point in camera_points:
+                        f.write(f"{point[0]}  {point[1]} {point[2]}\n")
+                self.show_notification(f"Saved camera points to {filename}")
+            except Exception as e:
+                self.show_notification(f"Failed to save file: {str(e)}")
+
+    def generate_circular_camera_points(
+        self, mesh, radius, num_points, levels, initial_z, z_distance
+    ):
+        start_angle_rad = np.radians(self.start_angle_deg)
+        total_sweep_rad = np.radians(self.total_sweep_deg)
+
+        z_values = [initial_z + i * z_distance for i in range(levels)]
+        points = []
+        for i, z in enumerate(z_values):
+            center_x, center_y = mesh.centroid[0], mesh.centroid[1]
+
+            if i % 2 == 0:
+                angles = start_angle_rad + np.linspace(
+                    0, total_sweep_rad, num_points, endpoint=True
+                )
+            else:
+                end_angle_rad = (start_angle_rad + total_sweep_rad) % (2 * np.pi)
+                angles = end_angle_rad - np.linspace(
+                    0, total_sweep_rad, num_points, endpoint=True
+                )
+
+            angles = np.mod(angles, 2 * np.pi)
+
+            points.extend(
+                [
+                    (
+                        center_x + radius * np.cos(angle),
+                        center_y + radius * np.sin(angle),
+                        z,
+                    )
+                    for angle in angles
+                ]
+            )
+        return np.array(points)
+
     def update_radius(self, value):
         self.radius = value
         self.update_parameters_display()
@@ -177,108 +307,14 @@ class Window(QMainWindow):
         text = f"Radius: {self.radius} mm, Points: {self.num_points}, Levels: {self.levels}, Z Distance: {self.z_distance} mm, Initial Z: {self.initial_z} mm, Start Angle: {self.start_angle_deg} deg, Sweep: {self.total_sweep_deg} deg"
         self.parameter_display.setText(text)
 
-    def update_plot(self):
-        if not hasattr(self, "ax"):
-            self.create_plot()
-        else:
-            # Only update the scatter plot
-            self.scatter.remove()
-            camera_points = self.generate_camera_points()
-            self.scatter = self.ax.scatter(
-                camera_points[:, 0],
-                camera_points[:, 1],
-                camera_points[:, 2],
-                color="red",
-            )
-        self.canvas.draw()
-
-    def create_plot(self):
-        """
-        Create the initial plot, which will only happen once to minimize overhead.
-        """
-        self.ax = self.canvas.figure.add_subplot(111, projection="3d")
-        if self.mesh:  # Ensure mesh is loaded
-            self.ax.plot_trisurf(
-                self.mesh.vertices[:, 0],
-                self.mesh.vertices[:, 1],
-                self.mesh.vertices[:, 2],
-                triangles=self.mesh.faces,
-                color="grey",
-                alpha=0.5,
-            )
-        camera_points = self.generate_camera_points()
-        self.scatter = self.ax.scatter(
-            camera_points[:, 0], camera_points[:, 1], camera_points[:, 2], color="red"
-        )
-        self.canvas.draw()
-
-    def load_stl_file(self):
-        filename, _ = QFileDialog.getOpenFileName(
-            self, "Open STL file", "", "STL Files (*.stl)"
-        )
-        if filename:
-            self.mesh = trimesh.load(filename)
-            self.update_plot()
-            self.info_label.hide()  # Hide the info label after loading a file
-
-    def export_points_to_csv(self):
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Save File", "", "CSV Files (*.csv)"
-        )
-        if filename:
-            try:
-                camera_points = self.generate_camera_points()
-                pd.DataFrame(camera_points, columns=["X", "Y", "Z"]).to_csv(
-                    filename, index=False
-                )
-                self.show_notification(f"Saved camera points to {filename}")
-            except Exception as e:
-                self.show_notification(f"Failed to save file: {str(e)}")
-
-    def generate_camera_points(self):
-        """
-        Generate camera points in multiple circular paths around the model based on its height,
-        starting at initial_z and separating each level by z_distance.
-        Each level begins at start_angle_deg degrees and completes a total_sweep_deg sweep.
-        For the next Z-level, the direction is reversed until it returns to the original start point of the previous level.
-        """
-        z_values = [self.initial_z + i * self.z_distance for i in range(self.levels)]
-        points = []
-        for i, z in enumerate(z_values):
-            center_x, center_y = self.mesh.centroid[0], (
-                self.mesh.centroid[1] if self.mesh else (0, 0)
-            )
-            start_angle_rad = np.radians(self.start_angle_deg)
-            total_sweep_rad = np.radians(self.total_sweep_deg)
-
-            if i % 2 == 0:
-                angles = start_angle_rad + np.linspace(
-                    0, total_sweep_rad, self.num_points, endpoint=True
-                )
-            else:
-                end_angle_rad = (start_angle_rad + total_sweep_rad) % (2 * np.pi)
-                angles = end_angle_rad - np.linspace(
-                    0, total_sweep_rad, self.num_points, endpoint=True
-                )
-
-            angles = np.mod(angles, 2 * np.pi)  # Adjust angles to wrap around
-
-            points.extend(
-                [
-                    (
-                        center_x + self.radius * np.cos(angle),
-                        center_y + self.radius * np.sin(angle),
-                        z,
-                    )
-                    for angle in angles
-                ]
-            )
-        return np.array(points)
+    def show_notification(self, message):
+        QMessageBox.information(self, "Notification", message)
 
 
 def main():
     app = QApplication(sys.argv)
     ex = Window()
+    ex.show()
     sys.exit(app.exec_())
 
 
