@@ -7,6 +7,7 @@ import matplotlib.widgets as widgets
 import tkinter as tk
 from tkinter import simpledialog
 import time
+import matplotlib.animation as animation
 
 
 ### Get the user input
@@ -49,9 +50,17 @@ def get_user_input():
         maxvalue=240,
         initialvalue=60,
     )
+    initial_z = simpledialog.askinteger(
+        "Input",
+        "Enter the initial Z distance (mm):",
+        parent=root,
+        minvalue=0,
+        maxvalue=200,
+        initialvalue=10,
+    )
 
     root.destroy()
-    return radius, num_points, levels, time_per_cycle
+    return radius, num_points, levels, time_per_cycle, initial_z
 
 
 def project_model_to_2d(mesh):
@@ -61,11 +70,14 @@ def project_model_to_2d(mesh):
     return mesh.vertices[:, :2]
 
 
-def generate_circular_camera_points(mesh, radius, num_points, levels):
+def generate_circular_camera_points(mesh, radius, num_points, levels, initial_z):
     """
-    Generate camera points in multiple circular paths around the model based on its height.
+    Generate camera points in multiple circular paths around the model based on its height, starting at initial_z.
     """
-    min_z, max_z = mesh.bounds[:, 2]
+    min_z = (
+        mesh.bounds[0, 2] + initial_z
+    )  # Start from the initial Z distance above the minimum bound
+    max_z = mesh.bounds[1, 2]
     z_values = np.linspace(min_z, max_z, levels)
     points = []
     for z in z_values:
@@ -171,7 +183,7 @@ def setup_zoom_controls(ax, fig):
     zoom_slider.on_changed(update_zoom)
 
 
-def animate_camera_movement_3d(mesh, camera_points, time_per_cycle):
+def animate_camera_movement_3d(mesh, camera_points, time_per_cycle, save_path):
     fig = plt.figure(figsize=(10, 8))  # Enlarge the figure
     ax = fig.add_subplot(111, projection="3d")
     ax.set_title("3D Camera Movement Simulation")
@@ -214,7 +226,6 @@ def animate_camera_movement_3d(mesh, camera_points, time_per_cycle):
         interval=interval,
         blit=False,
     )
-
     axcolor = "lightgoldenrodyellow"
     ax_zoom = fig.add_axes([0.2, 0.01, 0.65, 0.03], facecolor=axcolor)
     zoom_slider = widgets.Slider(ax_zoom, "Zoom", 0.1, 10.0, valinit=1.0)
@@ -231,6 +242,20 @@ def animate_camera_movement_3d(mesh, camera_points, time_per_cycle):
     plt.legend()
     plt.show()
 
+    # Save the animation
+    if save_path.endswith(".mp4"):
+        Writer = animation.FFMpegWriter
+        writer = Writer(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+    elif save_path.endswith(".gif"):
+        Writer = animation.PillowWriter
+        writer = Writer(fps=15)
+    else:
+        raise ValueError("Unsupported file format: Use .mp4 or .gif")
+
+    anim.save(save_path, writer=writer)
+    print(f"Saved animation to {save_path}")
+    plt.close(fig)
+
 
 def write_camera_points_to_file(camera_points, filename="camera_points.txt"):
     np.savetxt(filename, camera_points, fmt="%f", header="X Y Z")
@@ -241,13 +266,15 @@ def main_analysis_and_path_generation(file_path):
     Load the model, generate circular camera points for each height level, and visualize in 2D and 3D.
     """
     # Get user input
-    radius, num_points, levels, time_per_cycle = get_user_input()
+    radius, num_points, levels, time_per_cycle, initial_z = get_user_input()
     start_time = time.time()
 
     mesh = trimesh.load(file_path)
     print(f"Is the mesh watertight? {mesh.is_watertight}")
 
-    camera_points = generate_circular_camera_points(mesh, radius, num_points, levels)
+    camera_points = generate_circular_camera_points(
+        mesh, radius, num_points, levels, initial_z
+    )
 
     # Set up for 2D visualization and animation
     fig2d, ax2d = plt.subplots()
@@ -255,7 +282,8 @@ def main_analysis_and_path_generation(file_path):
     animate_camera_movement_2d(ax2d, camera_points)
 
     # Animate the camera movement in 3D
-    animate_camera_movement_3d(mesh, camera_points, time_per_cycle)
+    save_path = "camera_movement_3d.mp4"  # or "camera_movement_3d.gif" for GIF format
+    animate_camera_movement_3d(mesh, camera_points, time_per_cycle, save_path)
 
     total_time = time.time() - start_time
     print(f"Total processing time: {total_time:.2f} seconds")
