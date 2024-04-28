@@ -12,12 +12,13 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QFileDialog,
+    QMessageBox,
 )
 from PyQt5.QtCore import Qt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import trimesh
-import pandas as pd  # For CSV file operations
+import pandas as pd
 
 
 class Window(QMainWindow):
@@ -27,6 +28,7 @@ class Window(QMainWindow):
         self.initUI()
 
     def initUI(self):
+        self.setWindowTitle("Project_S - 3D Model Simulation")
         self.radius = 100
         self.num_points = 12
         self.levels = 3
@@ -40,6 +42,10 @@ class Window(QMainWindow):
         layout = QVBoxLayout()
         widget.setLayout(layout)
 
+        # Initial placeholder content
+        self.info_label = QLabel("Loading... Please open an STL file to start.")
+        layout.addWidget(self.info_label)
+
         # Canvas Setup
         self.canvas = FigureCanvas(plt.figure())
         layout.addWidget(self.canvas)
@@ -50,7 +56,6 @@ class Window(QMainWindow):
         # Parameter Display
         self.parameter_display = QLineEdit(self)
         self.parameter_display.setReadOnly(True)
-        self.update_parameters_display()  # Initial display update
         layout.addWidget(self.parameter_display)
 
         # Update and File Selection Buttons
@@ -67,8 +72,16 @@ class Window(QMainWindow):
         layout.addWidget(self.export_button)
 
         self.setGeometry(300, 300, 800, 600)
-        self.setWindowTitle("3D Model Simulation")
+        self.show_startup_message()
         self.show()
+
+    def show_startup_message(self):
+        self.info_label.setText(
+            f"Welcome to Project_S by \nThis program simulates camera paths around 3D models. Load an STL file to start."
+        )
+
+    def show_notification(self, message):
+        QMessageBox.information(self, "Notification", message)
 
     def setupSliders(self, layout):
         sliders_layout = QHBoxLayout()
@@ -206,17 +219,21 @@ class Window(QMainWindow):
         if filename:
             self.mesh = trimesh.load(filename)
             self.update_plot()
+            self.info_label.hide()  # Hide the info label after loading a file
 
     def export_points_to_csv(self):
         filename, _ = QFileDialog.getSaveFileName(
             self, "Save File", "", "CSV Files (*.csv)"
         )
         if filename:
-            camera_points = self.generate_camera_points()
-            pd.DataFrame(camera_points, columns=["X", "Y", "Z"]).to_csv(
-                filename, index=False
-            )
-            print(f"Saved camera points to {filename}")
+            try:
+                camera_points = self.generate_camera_points()
+                pd.DataFrame(camera_points, columns=["X", "Y", "Z"]).to_csv(
+                    filename, index=False
+                )
+                self.show_notification(f"Saved camera points to {filename}")
+            except Exception as e:
+                self.show_notification(f"Failed to save file: {str(e)}")
 
     def generate_camera_points(self):
         """
