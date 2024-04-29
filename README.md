@@ -1,4 +1,4 @@
-# Project_S ( Camera control system for desktop 3d printers)
+# Project_S (Camera control system for desktop 3d printers)
 
 
 # 1- Develop Camera Path Mapping Algorithm
