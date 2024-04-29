@@ -44,9 +44,16 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 - Camera points are written to camera_points.txt in the current directory, which can be used for further processing or control systems.
 
 ## Demo 
+## Demo 
 
-![Camera Movement 3D](demos/camera_movement_3d.gif)
-![PyQt5 Demo](demos/demo.JPG)
-![Plotting with Time](demos/time.JPG)
-![Plotting without Time](demos/no_time.JPG)
+| Camera Movement 3D | PyQt5 Demo `project_s.py` |
+|--------------------|------------|
+| ![Camera Movement 3D](demos/camera_movement_3d.gif) | ![PyQt5 Demo](demos/demo.JPG) |
 
+|PyQt5 Demo `project_y.py`|
+|--------------------|
+| ![PyQt5 Demo](demos/demo_timing.JPG) |
+
+| Plotting with Time | Plotting without Time |
+|---------------------|-----------------------|
+| ![Plotting with Time](demos/time.JPG) | ![Plotting without Time](demos/no_time.JPG) |
