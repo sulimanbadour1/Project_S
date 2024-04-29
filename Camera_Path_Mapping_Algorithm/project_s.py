@@ -203,11 +203,14 @@ class Window(QMainWindow):
         filename, _ = QFileDialog.getOpenFileName(
             self, "Open STL file", "", "STL Files (*.stl)"
         )
-        if filename:
-            scale = self.get_user_input()
-            self.mesh = load_stl_file(filename, scale)
-            self.update_plot()
-            self.info_label.hide()
+        try:
+            if filename:
+                scale = self.get_user_input()
+                self.mesh = load_stl_file(filename, scale)
+                self.update_plot()
+                self.info_label.hide()
+        except Exception as e:
+            self.show_notification(f"Failed to load file: {str(e)}")
 
     def get_user_input(self):
         # Define a method to get user input for scaling factor
@@ -243,6 +246,10 @@ class Window(QMainWindow):
     def generate_circular_camera_points(
         self, mesh, radius, num_points, levels, initial_z, z_distance
     ):
+        if mesh is None:
+            self.show_notification("No mesh loaded. Please load an STL file first.")
+            raise ValueError("No mesh loaded. Please load an STL file first.")
+
         start_angle_rad = np.radians(self.start_angle_deg)
         total_sweep_rad = np.radians(self.total_sweep_deg)
 
