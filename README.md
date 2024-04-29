@@ -24,6 +24,11 @@ You can install these packages via pip:
 
 ## File Structure
 `project_s.py` : Contains the main Python script for generating the camera paths and animating them.
+`project_y.py` : Contains the main Python script for generating the camera paths with **timestamps** you can select the time for each cycle.
+`load_display.py` : loads the stl file and generate the camera points.
+`plotting_with_time.py`: plot the path with the time.
+`plotting.py` : plot the path without time.
+
 
 ## Usage
 To run this script, make sure you have a 3D model file in STL format. Update the model_path in the script to point to your model file location.
