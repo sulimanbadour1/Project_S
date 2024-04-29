@@ -40,4 +40,4 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 
 ## Demo 
 <img src="demos\camera_movement_3d.gif" alt="demo">
-<img src= "demos\UI_interactive.JPG" alt="PyQt5">
+<img src= "demos\demo.JPG" alt="PyQt5">
