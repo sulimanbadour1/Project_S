@@ -1,124 +1,75 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from simple_pid import PID
+
+# Constants for the mechanical design
+TILT_RANGE_DEGREES = 90.0  # Full range of tilt in degrees
+
+# Constants for converting XYZ coordinates to movement degrees
+MM_PER_STEP_LINEAR = 0.01  # Assumed value: 0.01mm per step for linear actuator
+DEGREES_PER_STEP_ROTARY = 0.1  # Assumed value: 0.1 degrees per step for rotary base
+DEGREES_PER_STEP_TILT = 0.1  # Assumed value: 0.1 degrees per step for tilt joint
+# Roll will be omitted in movement commands due to its complexity and lack of details.
+# Maximum X-coordinate representing the full rotation range
+X_MAX = 550.0
+# Maximum Y-coordinate representing the full tilt range
+Y_MAX = 490.0
+# Maximum Z-coordinate representing the maximum height
+Z_MAX = 650.0
 
 
+# Load camera points from the file
 def load_camera_points(filename):
     return np.loadtxt(filename, skiprows=1)
 
 
-def simulate_rotating_base_with_arm(camera_points, printer_height, pid_base, pid_arm):
-    # Assume starting with the base aligned with the first target point.
-    target_angle_base = np.arctan2(camera_points[0, 1], camera_points[0, 0])
-    current_angle_base = target_angle_base
-    current_angle_arm = 0.0
+# Convert XYZ coordinates to control commands
+def xyz_to_control_commands(x, y, z):
+    # Convert to polar coordinates for rotary base
+    angle = (
+        np.degrees(np.arctan2(y, x)) % 360.0
+    )  # Convert to degrees and normalize to 0-360
+    normalized_z = z / Z_MAX  # Normalize Z based on maximum printer height
 
-    # Stores the positions of the camera (end of the arm)
-    camera_positions = []
+    # Calculate the commands for each actuator
+    azimuth = angle  # Azimuth angle for the turntable
+    elevation = normalized_z * TILT_RANGE_DEGREES  # Elevation angle for the tilt
+    linear_steps = z / MM_PER_STEP_LINEAR  # Linear steps for Z-axis height adjustment
 
-    # Go through each target point
-    for point in camera_points:
-        # Calculate the base rotation angle and arm angle required to point at the target
-        target_angle_base = np.arctan2(point[1], point[0])
-        target_angle_arm = np.arcsin(
-            point[2] / np.sqrt(point[0] ** 2 + point[1] ** 2 + point[2] ** 2)
-        )
-
-        # Update the angles using the PID controllers
-        current_angle_base += pid_base(target_angle_base - current_angle_base)
-        current_angle_arm += pid_arm(target_angle_arm - current_angle_arm)
-
-        # Calculate the position of the arm's end (camera position)
-        distance_to_point = np.linalg.norm([point[0], point[1]])
-        camera_x = distance_to_point * np.cos(current_angle_base)
-        camera_y = distance_to_point * np.sin(current_angle_base)
-        camera_z = printer_height + distance_to_point * np.sin(current_angle_arm)
-
-        camera_positions.append((camera_x, camera_y, camera_z))
-
-    return np.array(camera_positions)
+    return azimuth, elevation, int(linear_steps)
 
 
-# PID controllers for the rotating base and the arm
-pid_base = PID(1.0, 0.1, 0.05, setpoint=0)
-pid_arm = PID(1.0, 0.1, 0.05, setpoint=0)
+# Write the control commands to a file
+def write_control_commands(camera_points, output_file):
+    with open(output_file, "w") as file:
+        for x, y, z in camera_points:
+            azimuth, elevation, linear_steps = xyz_to_control_commands(x, y, z)
+            file.write(f"MOVE AZIMUTH TO {azimuth:.2f} DEGREES\n")
+            file.write(f"MOVE ELEVATION TO {elevation:.2f} DEGREES\n")
+            file.write(f"ADJUST HEIGHT TO {linear_steps} STEPS\n")
+            file.write("WAIT FOR COMPLETION\n")
 
-# Load camera points
-camera_points = load_camera_points("camera_points.txt")
 
-# Printer height, adjust to the height of your 3D printer where the rotating base is located
-printer_height = 650  # in mm
+# Main function to generate the control system and plot the points
+def generate_control_file_and_plot(input_filename, output_filename):
+    camera_points = load_camera_points(input_filename)
+    write_control_commands(camera_points, output_filename)
 
-# Simulate the rotating base with the arm
-camera_positions = simulate_rotating_base_with_arm(
-    camera_points, printer_height, pid_base, pid_arm
-)
+    # Plot the points in 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(camera_points[:, 0], camera_points[:, 1], camera_points[:, 2])
+    ax.set_xlabel("X Axis")
+    ax.set_ylabel("Y Axis")
+    ax.set_zlabel("Z Axis")
+    plt.show()
 
-# Create a 3D plot
-fig = plt.figure(figsize=(12, 10))
-ax = fig.add_subplot(111, projection="3d")
+    print(f"Control file '{output_filename}' generated successfully.")
 
-# Plot target points on the printer bed
-ax.scatter(
-    camera_points[:, 0],
-    camera_points[:, 1],
-    np.zeros_like(camera_points[:, 2]),
-    color="green",
-    label="Target Points",
-)
 
-# Plot the positions of the camera at the end of the arm
-ax.scatter(
-    camera_positions[:, 0],
-    camera_positions[:, 1],
-    camera_positions[:, 2],
-    color="red",
-    label="Camera Positions",
-)
+# File paths
+input_filename = "camera_points.txt"  # The text file with XYZ coordinates
+output_filename = "control_commands.txt"  # The control file to be generated
 
-# Draw lines from the base to the camera position to represent the arm
-for position in camera_positions:
-    # Base to arm joint
-    ax.plot(
-        [0, position[0]],
-        [0, position[1]],
-        [printer_height, printer_height],
-        "b-",
-        label="Base to Arm Joint",
-    )
-    # Arm joint to camera
-    ax.plot(
-        [position[0], position[0]],
-        [position[1], position[1]],
-        [printer_height, position[2]],
-        "r-",
-        label="Arm Joint to Camera",
-    )
-
-# Setting the labels and titles for the axes
-ax.set_xlabel("X Position (mm)")
-ax.set_ylabel("Y Position (mm)")
-ax.set_zlabel("Z Position (mm)")
-ax.set_title("3D Simulation with Rotating Camera Base and Arm on 3D Printer")
-
-# Limiting the axes ranges for better visibility
-max_range = (
-    np.array(
-        [
-            camera_points[:, 0].max() - camera_points[:, 0].min(),
-            camera_points[:, 1].max() - camera_points[:, 1].min(),
-            camera_points[:, 2].max() - camera_points[:, 2].min(),
-        ]
-    ).max()
-    / 2.0
-)
-mid_x = (camera_points[:, 0].max() + camera_points[:, 0].min()) * 0.5
-mid_y = (camera_points[:, 1].max() + camera_points[:, 1].min()) * 0.5
-mid_z = (camera_points[:, 2].max() + camera_points[:, 2].min()) * 0.5
-ax.set_xlim(mid_x - max_range, mid_x + max_range)
-ax.set_ylim(mid_y - max_range, mid_y + max_range)
-ax.set_zlim(0, printer_height + max_range)
-
-# Show the plot
-plt.show()
+# Generate the control file and plot
+generate_control_file_and_plot(input_filename, output_filename)
