@@ -47,4 +47,4 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 <img src="demos/camera_movement_3d.gif" alt="demo">
 <img src= "demos/demo.JPG" alt="PyQt5">
 <img src="demos/time.JPG" alt="plotting with time">
-<img src="demos/no_time.JPG.JPG" alt="plotting without time">
+<img src="demos/no_time.JPG" alt="plotting without time">
