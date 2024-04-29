@@ -23,11 +23,11 @@ You can install these packages via pip:
 ```pip install numpy matplotlib trimesh pyglet<2 PyQt5```
 
 ## File Structure
-`project_s.py` : Contains the main Python script for generating the camera paths and animating them.
-`project_y.py` : Contains the main Python script for generating the camera paths with **timestamps** you can select the time for each cycle.
-`load_display.py` : loads the stl file and generate the camera points.
-`plotting_with_time.py`: plot the path with the time.
-`plotting.py` : plot the path without time.
+- `project_s.py` : Contains the main Python script for generating the camera paths and animating them.
+- `project_y.py` : Contains the main Python script for generating the camera paths with **timestamps** you can select the time for each cycle.
+- `load_display.py` : loads the stl file and generate the camera points.
+- `plotting_with_time.py`: plot the path with the time.
+- `plotting.py` : plot the path without time.
 
 
 ## Usage
@@ -44,5 +44,7 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 - Camera points are written to camera_points.txt in the current directory, which can be used for further processing or control systems.
 
 ## Demo 
-<img src="demos\camera_movement_3d.gif" alt="demo">
-<img src= "demos\demo.JPG" alt="PyQt5">
+<img src="demos/camera_movement_3d.gif" alt="demo">
+<img src= "demos/demo.JPG" alt="PyQt5">
+<img src="demos/time.JPG" alt="plotting with time">
+<img src="demos/no_time.JPG.JPG" alt="plotting without time">
