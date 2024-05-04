@@ -56,3 +56,36 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 | Plotting with Time | Plotting without Time |
 |---------------------|-----------------------|
 | ![Plotting with Time](demos/time.JPG) | ![Plotting without Time](demos/no_time.JPG) |
+
+
+
+# 2- Control 
+## Real-time Robot Arm Movement Visualization + IK
+
+- `plot_CAMBOT.py`
+This Python script uses the PyBullet physics engine to simulate interactions between a robot and an object in a 3D environment. It demonstrates the loading of a robot from a URDF file, setting up joint controls, and capturing and logging various simulation data.
+
+## Dependencies
+
+- **PyBullet**: A Python module used for physics simulations in robotics, games, and visual effects.
+
+## Setup and Execution
+
+### Initial Setup
+
+Import necessary modules and define the main functions used for loading the robot and object, setting up joint control, and running the simulation.
+
+```python
+import pybullet as p
+import time
+import pybullet_data
+```
+
+
+### Function: load_robot_and_object
+This function initializes the PyBullet simulation environment, loads the robot from a URDF file, and creates a simple box-shaped object at a specified position.
+
+### Parameters:
+
+- urdf_path: String, path to the robot's URDF file.
+- object_position: List of three floats, specifying the object's position in the simulation environment.
