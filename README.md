@@ -101,3 +101,6 @@ import pybullet_data
 | Robot Work Space `work_space.py` | IK  `ik.py` |
 |--------------------|------------|
 | ![wS](demos\ws.PNG) | ![Inverse Kinematics Demo](demos/control4.PNG) | 
+
+
+| ![EE](demos\ee.PNG) 
