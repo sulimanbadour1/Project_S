@@ -89,3 +89,21 @@ This function initializes the PyBullet simulation environment, loads the robot f
 
 - urdf_path: String, path to the robot's URDF file.
 - object_position: List of three floats, specifying the object's position in the simulation environment.
+
+Returns:
+
+- Tuple containing identifiers for the loaded robot and object.
+
+
+
+### Function: setup_joint_control
+Sets up control for the robot's joints based on initial positions.
+
+## Parameters:
+
+- robot_id: Integer, the identifier of the robot.
+ -initial_positions: List of floats, initial positions for the robot's movable joints.
+
+Returns:
+
+- List of tuples, each containing a joint index and its corresponding debug parameter ID.
