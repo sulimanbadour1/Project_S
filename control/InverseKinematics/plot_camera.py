@@ -3,13 +3,28 @@ import time
 import pybullet_data
 
 
-def load_robot(urdf_path):
+def load_robot_and_object(urdf_path, object_position):
     p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
     robot_id = p.loadURDF(urdf_path, useFixedBase=True)
     print(f"Robot loaded with ID: {robot_id}")
-    return robot_id
+
+    # Load a simple object (e.g., a box) directly under the robot
+    visual_shape_id = p.createVisualShape(
+        shapeType=p.GEOM_BOX, halfExtents=[0.1, 0.1, 0.1]
+    )
+    collision_shape_id = p.createCollisionShape(
+        shapeType=p.GEOM_BOX, halfExtents=[0.1, 0.1, 0.1]
+    )
+    object_id = p.createMultiBody(
+        baseMass=0,
+        baseCollisionShapeIndex=collision_shape_id,
+        baseVisualShapeIndex=visual_shape_id,
+        basePosition=object_position,
+    )
+    print(f"Object loaded with ID: {object_id}")
+    return robot_id, object_id
 
 
 def setup_joint_control(robot_id, initial_positions):
@@ -27,18 +42,17 @@ def setup_joint_control(robot_id, initial_positions):
     return joint_params
 
 
-def setup_camera():
-    camera_distance = 2.0
-    camera_yaw = 50
-    camera_pitch = -35
-    camera_target_position = (0, 0, 0.5)
-    view_matrix = p.computeViewMatrixFromYawPitchRoll(
-        cameraTargetPosition=camera_target_position,
-        distance=camera_distance,
-        yaw=camera_yaw,
-        pitch=camera_pitch,
-        roll=0,
-        upAxisIndex=2,
+def attach_camera_to_link(robot_id, link_id, target_position):
+    """
+    Attach camera to a robot link and dynamically adjust its position and orientation.
+    """
+    com_p, com_o, _, _, _, _ = p.getLinkState(robot_id, link_id)
+    rot_matrix = p.getMatrixFromQuaternion(com_o)
+    camera_position = com_p
+    camera_target_position = target_position
+    up_vector = [rot_matrix[2], rot_matrix[5], rot_matrix[8]]
+    view_matrix = p.computeViewMatrix(
+        camera_position, camera_target_position, up_vector
     )
     aspect = 960 / 720
     fov = 60
@@ -60,8 +74,8 @@ def capture_camera_data(view_matrix, projection_matrix):
     print("Captured images.")
 
 
-def simulate(robot_id, joint_params, view_matrix, projection_matrix):
-    print("Use the sliders to control the robot joints.")
+def simulate(robot_id, object_id, joint_params, target_position):
+    last_link_id = p.getNumJoints(robot_id) - 1
     try:
         while True:
             p.stepSimulation()
@@ -71,14 +85,10 @@ def simulate(robot_id, joint_params, view_matrix, projection_matrix):
                     robot_id, joint, p.POSITION_CONTROL, targetPosition=param_value
                 )
 
-            # Capture camera data - optional, you can remove this if you only want position data
+            view_matrix, projection_matrix = attach_camera_to_link(
+                robot_id, last_link_id, target_position
+            )
             capture_camera_data(view_matrix, projection_matrix)
-
-            # Get the state of the last link
-            last_link_index = p.getNumJoints(robot_id) - 1
-            last_link_state = p.getLinkState(robot_id, last_link_index)
-            position_of_last_link = last_link_state[0]
-            print(f"Position of last link (x, y, z): {position_of_last_link}")
 
             time.sleep(1.0 / 240.0)
     except KeyboardInterrupt:
@@ -88,14 +98,11 @@ def simulate(robot_id, joint_params, view_matrix, projection_matrix):
 def main():
     urdf_path = "urdfs/s.urdf"
     initial_positions = [-3.142, 1.571, 0.876, 0.711, 0.976]
-    robot_id = load_robot(urdf_path)
+    object_position = [0, 0, -0.58]  # Position under the robot
+    robot_id, object_id = load_robot_and_object(urdf_path, object_position)
     joint_params = setup_joint_control(robot_id, initial_positions)
-    view_matrix, projection_matrix = setup_camera()
-    try:
-        simulate(robot_id, joint_params, view_matrix, projection_matrix)
-    finally:
-        p.disconnect()
-        print("Disconnected from the physics server.")
+
+    simulate(robot_id, object_id, joint_params, object_position)
 
 
 if __name__ == "__main__":
