@@ -12,6 +12,10 @@ def init_robot():
     )
 
 
+# "urdfs/arm_urdf.urdf",
+#         active_links_mask=[False, True, True, True, True, True, True],
+
+
 # for the other robot
 # robot_chain = ikpy.chain.Chain.from_urdf_file(
 #     "s.urdf",

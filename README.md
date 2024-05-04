@@ -62,8 +62,12 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 # 2- Control 
 ## Real-time Robot Arm Movement Visualization + IK
 
+### The name of the Robot is **CAMBOT**.
+
 - `plot_CAMBOT.py`
-This Python script uses the PyBullet physics engine to simulate interactions between a robot and an object in a 3D environment. It demonstrates the loading of a robot from a URDF file, setting up joint controls, and capturing and logging various simulation data.
+- `path_plot.py`
+- `plot_with_camera.py`
+This Python scripts uses the PyBullet physics engine to simulate interactions between a robot and an object in a 3D environment. It demonstrates the loading of a robot from a URDF file, setting up joint controls, and capturing and logging various simulation data.
 
 ## Dependencies
 
@@ -80,30 +84,18 @@ import pybullet as p
 import time
 import pybullet_data
 ```
+## Functions
+
+- `load_robot_and_object`: Initializes the simulation environment, loads the robot, and creates an object.
+- `setup_joint_control`: Sets up joint control for the robot.
+- `simulate_and_capture`: Runs the simulation, capturing joint states and end-effector positions.
 
 
-### Function: load_robot_and_object
-This function initializes the PyBullet simulation environment, loads the robot from a URDF file, and creates a simple box-shaped object at a specified position.
+### Demos for the control 
+| Robot EE Path  | PyBullet Simulation `plot_CAMBOT.py` |
+|--------------------|------------|
+| ![EE](demos\control1.PNG) | ![PyBullet Demo](demos/control2.PNG) | 
 
-### Parameters:
-
-- urdf_path: String, path to the robot's URDF file.
-- object_position: List of three floats, specifying the object's position in the simulation environment.
-
-Returns:
-
-- Tuple containing identifiers for the loaded robot and object.
-
-
-
-### Function: setup_joint_control
-Sets up control for the robot's joints based on initial positions.
-
-## Parameters:
-
-- robot_id: Integer, the identifier of the robot.
- -initial_positions: List of floats, initial positions for the robot's movable joints.
-
-Returns:
-
-- List of tuples, each containing a joint index and its corresponding debug parameter ID.
+| Robot Work Space `work_space.py` | IK  `ik.py` |
+|--------------------|------------|
+| ![EE](demos\control3.PNG) | ![Inverse Kinematics Demo](demos/control4.PNG) | 
