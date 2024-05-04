@@ -7,7 +7,8 @@ from matplotlib.widgets import Slider
 
 def init_robot():
     return ikpy.chain.Chain.from_urdf_file(
-        "arm_urdf.urdf", active_links_mask=[False, True, True, True, True, True, True]
+        "urdfs/arm_urdf.urdf",
+        active_links_mask=[False, True, True, True, True, True, True],
     )
 
 
