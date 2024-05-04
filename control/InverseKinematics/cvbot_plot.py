@@ -1,9 +1,12 @@
 import pybullet as p
 import time
 import pybullet_data
+import numpy as np
+import matplotlib.pyplot as plt  # Optional, for plotting
 
 
 def load_robot_and_object(urdf_path, object_position):
+    p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
     robot_id = p.loadURDF(urdf_path, useFixedBase=True)
@@ -70,63 +73,85 @@ def capture_camera_data(view_matrix, projection_matrix):
         viewMatrix=view_matrix,
         projectionMatrix=projection_matrix,
     )
-    print("Camera activated.")
+    print("Captured images.")
 
 
-def simulate(robot_id, joint_params, target_position, enable_camera=False):
+def simulate_and_capture(
+    robot_id, object_id, joint_params, target_position, output_file
+):
+    end_effector_positions = []
+    joint_angles = []
     last_link_id = p.getNumJoints(robot_id) - 1
-    recording = []
     try:
         while True:
             p.stepSimulation()
-            joint_positions = []
             for joint, param_id in joint_params:
                 param_value = p.readUserDebugParameter(param_id)
                 p.setJointMotorControl2(
                     robot_id, joint, p.POSITION_CONTROL, targetPosition=param_value
                 )
-                joint_positions.append(param_value)
-            recording.append(joint_positions)
 
-            if enable_camera:
-                view_matrix, projection_matrix = attach_camera_to_link(
-                    robot_id, last_link_id, target_position
-                )
-                capture_camera_data(view_matrix, projection_matrix)
+            # Capture end-effector position
+            end_effector_pos, _ = p.getLinkState(robot_id, last_link_id)[:2]
+            end_effector_positions.append(end_effector_pos)
+
+            # Capture joint angles
+            current_joint_angles = [
+                p.getJointState(robot_id, joint)[0] for joint, _ in joint_params
+            ]
+            joint_angles.append(current_joint_angles)
 
             time.sleep(1.0 / 240.0)
+
+            # Write data to file
+            output_file.write(
+                f"{end_effector_pos[0]}, {end_effector_pos[1]}, {end_effector_pos[2]}, "
+            )
+            output_file.write(", ".join(str(angle) for angle in current_joint_angles))
+            output_file.write("\n")
+
+            # Debug prints
+            print(f"End-effector position: {end_effector_pos}")
+            print(f"Joint angles: {current_joint_angles}")
+
     except KeyboardInterrupt:
         print("Simulation stopped by user.")
-        return recording
-    finally:
-        if p.isConnected():
-            p.disconnect()
 
-
-def save_positions_to_file(positions, filename="recorded_positions.txt"):
-    with open(filename, "w") as file:
-        for pos in positions:
-            file.write(",".join(map(str, pos)) + "\n")
-    print(f"Positions saved to {filename}")
+    return end_effector_positions, joint_angles
 
 
 def main():
-    p.connect(p.GUI)
-
     urdf_path = "urdfs/s.urdf"
-    initial_positions = [-3.142, 1.571, 0.876, 0.711, 0.976]
+    initial_positions = [-3.142, 1.571, 0.959, 0.529, 1.422]
     object_position = [0, 0, -0.58]  # Position under the robot
-    robot_id, _ = load_robot_and_object(urdf_path, object_position)
+    robot_id, object_id = load_robot_and_object(urdf_path, object_position)
     joint_params = setup_joint_control(robot_id, initial_positions)
 
-    enable_camera = input("Enable camera? (y/n): ").lower() == "y"
-    if enable_camera:
-        print("Camera activated.")
+    # Open output file
+    with open("robot_data.txt", "w") as output_file:
+        # Simulate robot movement and capture end-effector positions and joint angles
+        end_effector_positions, joint_angles = simulate_and_capture(
+            robot_id, object_id, joint_params, object_position, output_file
+        )
+        print("End-effector positions:")
+        print(end_effector_positions)
 
-    target_position = object_position
-    recording = simulate(robot_id, joint_params, target_position, enable_camera)
-    print("Simulation completed.")
-    save_positions_to_file(recording)
+        # Extract path from end-effector positions
+        path = np.array(end_effector_positions)
+
+        # Output path
+        print("Path points:")
+        for i, point in enumerate(path):
+            print(f"Point {i + 1}: {point}")
+
+        # Plot path (optional, requires matplotlib)
+        plt.figure()
+        plt.plot(path[:, 0], path[:, 1], "-o")
+        plt.title("Robot End-Effector Path")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.grid(True)
+        plt.show()
 
 
 if __name__ == "__main__":
