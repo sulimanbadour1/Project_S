@@ -92,10 +92,10 @@ import pybullet_data
 
 
 ### Demos for the control 
-| Robot EE Path  | PyBullet Simulation `plot_CAMBOT.py` |
-|--------------------|------------|
-| ![EE](demos\control1.PNG) | ![PyBullet Demo](demos/control2.PNG) | 
+| Robot EE Path  | PyBullet Simulation `plot_CAMBOT.py` | | Robot Work Space `work_space.py` | IK  `ik.py` |
+|--------------------|------------||--------------------|------------|
+| ![EE](demos\control1.PNG) | ![PyBullet Demo](demos/control2.PNG) | | ![wS](demos\control3.PNG) | ![Inverse Kinematics Demo](demos/control4.PNG) | 
 
-| Robot Work Space `work_space.py` | IK  `ik.py` |
-|--------------------|------------|
-| ![wS](demos\control3.PNG) | ![Inverse Kinematics Demo](demos/control4.PNG) | 
+
+
+
