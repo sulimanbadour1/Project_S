@@ -3,9 +3,15 @@ import ikpy.utils.plot as plot_utils
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+"""refer to robot.txt for the correct URDF file"""
+
+
 # Load the robot from the URDF file files #arm_urdf.urdf
 robot_chain = ikpy.chain.Chain.from_urdf_file(
-    "arm_urdf.urdf", active_links_mask=[False, True, True, True, True, True, True]
+    "urdfs/s.urdf",
+    base_elements=["base"],
+    active_links_mask=[False, True, True, True, True, True],  # Adjusted to six elements
 )
 
 
@@ -47,7 +53,7 @@ def generate_workspace(chain, n_samples, joint_limits):
 
 
 # Generate workspace points
-workspace = generate_workspace(robot_chain, 10000, limits)
+workspace = generate_workspace(robot_chain, 1000, limits)
 
 # Plotting the workspace
 fig = plt.figure()

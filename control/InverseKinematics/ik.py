@@ -12,6 +12,14 @@ def init_robot():
     )
 
 
+# for the other robot
+# robot_chain = ikpy.chain.Chain.from_urdf_file(
+#     "s.urdf",
+#     base_elements=["base"],
+#     active_links_mask=[False, True, True, True, True, True]  # Adjusted to six elements
+# )
+
+
 def create_plot():
     fig, ax = plt.subplots()
     plt.subplots_adjust(left=0.1, bottom=0.35)

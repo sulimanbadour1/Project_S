@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<robot name="complex_robot">
+<robot name="optimized_complex_robot">
 
     <!-- Base Link -->
-    <link name="base_link">
+    <link name="base">
         <visual>
             <geometry>
                 <box size="0.2 0.2 0.1"/>
@@ -14,17 +14,17 @@
     <link name="link1">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.4"/>
+                <cylinder radius="0.02" length="0.03"/>
             </geometry>
-            <origin xyz="0 0 0.2" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.015" rpy="0 0 0"/>
         </visual>
     </link>
 
-    <!-- Joint 1 - Allows 360 degree rotation -->
+    <!-- Joint 1 - Positioned above the base -->
     <joint name="joint1" type="revolute">
-        <parent link="base_link"/>
+        <parent link="base"/>
         <child link="link1"/>
-        <origin xyz="0 0 0.05" rpy="0 0 0"/>
+        <origin xyz="0 0 0.1" rpy="0 0 0"/>
         <axis xyz="0 0 1"/>
         <limit lower="-3.14159" upper="3.14159" effort="1000" velocity="1.0"/>
     </joint>
@@ -33,9 +33,9 @@
     <link name="link2">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.3"/>
+                <cylinder radius="0.02" length="0.25"/>
             </geometry>
-            <origin xyz="0 0 0.15" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
         </visual>
     </link>
 
@@ -43,8 +43,8 @@
     <joint name="joint2" type="revolute">
         <parent link="link1"/>
         <child link="link2"/>
-        <origin xyz="0 0 0.4" rpy="0 0 0"/>
-        <axis xyz="0 0 1"/>
+        <origin xyz="0 0 0.03" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
@@ -52,9 +52,9 @@
     <link name="link3">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.25"/>
+                <cylinder radius="0.02" length="0.28"/>
             </geometry>
-            <origin xyz="0 0 0.125" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.14" rpy="0 0 0"/>
         </visual>
     </link>
 
@@ -62,8 +62,8 @@
     <joint name="joint3" type="revolute">
         <parent link="link2"/>
         <child link="link3"/>
-        <origin xyz="0 0 0.3" rpy="0 0 0"/>
-        <axis xyz="0 0 1"/>
+        <origin xyz="0 0 0.25" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
@@ -71,9 +71,9 @@
     <link name="link4">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.2"/>
+                <cylinder radius="0.02" length="0.28"/>
             </geometry>
-            <origin xyz="0 0 0.1" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.14" rpy="0 0 0"/>
         </visual>
     </link>
 
@@ -81,27 +81,17 @@
     <joint name="joint4" type="revolute">
         <parent link="link3"/>
         <child link="link4"/>
-        <origin xyz="0 0 0.25" rpy="0 0 0"/>
-        <axis xyz="0 0 1"/>
+        <origin xyz="0 0 0.28" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
-    <!-- Link 5 -->
-    <link name="link5">
-        <visual>
-            <geometry>
-                <cylinder radius="0.02" length="0.15"/>
-            </geometry>
-            <origin xyz="0 0 0.075" rpy="0 0 0"/>  <!-- Centered along length -->
-        </visual>
-    </link>
-
-    <!-- Joint 5 -->
+    <!-- Joint 5 - Allows for an additional degree of freedom at the end of the last link -->
     <joint name="joint5" type="revolute">
         <parent link="link4"/>
-        <child link="link5"/>
-        <origin xyz="0 0 0.2" rpy="0 0 0"/>
-        <axis xyz="0 0 1"/>
+        <child link="link4"/> <!-- No additional link; rotates about its own end -->
+        <origin xyz="0 0 0.28" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 

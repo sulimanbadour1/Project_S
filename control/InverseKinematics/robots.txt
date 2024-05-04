@@ -1,0 +1,11 @@
+# for the other robot
+# robot_chain = ikpy.chain.Chain.from_urdf_file(
+#     "s.urdf",
+#     base_elements=["base"],
+#     active_links_mask=[False, True, True, True, True, True]  # Adjusted to six elements
+# )
+
+
+### second robot
+    "urdfs/arm_urdf.urdf",
+    active_links_mask=[False, True, True, True, True, True, True],

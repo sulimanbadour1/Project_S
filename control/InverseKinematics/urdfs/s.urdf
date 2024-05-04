@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="complex_robot">
+<robot name="optimized_complex_robot">
 
     <!-- Base Link -->
     <link name="base">
@@ -10,13 +10,13 @@
         </visual>
     </link>
 
-    <!-- Link 1 -->
+    <!-- Link 1 (30mm) -->
     <link name="link1">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.4"/>
+                <cylinder radius="0.02" length="0.03"/> <!-- Length adjusted to 30mm -->
             </geometry>
-            <origin xyz="0 0 0.2" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.015" rpy="0 0 0"/>  <!-- Centered along length -->
         </visual>
     </link>
 
@@ -29,33 +29,32 @@
         <limit lower="-3.14159" upper="3.14159" effort="1000" velocity="1.0"/>
     </joint>
 
-    <!-- Link 2 -->
+    <!-- Link 2 (250mm) -->
     <link name="link2">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.3"/>
+                <cylinder radius="0.02" length="0.25"/> <!-- Length adjusted to 250mm -->
             </geometry>
-            <origin xyz="0 0 0.15" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>  <!-- Centered along length -->
         </visual>
     </link>
 
-    <!-- Joint 2 to 5 share the same rotation axis and are defined similarly -->
+    <!-- Joint 2 -->
     <joint name="joint2" type="revolute">
         <parent link="link1"/>
         <child link="link2"/>
-        <origin xyz="0 0 0.4" rpy="0 0 0"/>
+        <origin xyz="0 0 0.03" rpy="0 0 0"/>  <!-- Adjusted for the length of link1 -->
         <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
-    <!-- Subsequent links and joints are defined in a chain with identical joint parameters -->
-    <!-- Link 3 -->
+    <!-- Link 3 (280mm) -->
     <link name="link3">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.25"/>
+                <cylinder radius="0.02" length="0.28"/> <!-- Length adjusted to 280mm -->
             </geometry>
-            <origin xyz="0 0 0.125" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.14" rpy="0 0 0"/>  <!-- Centered along length -->
         </visual>
     </link>
 
@@ -63,18 +62,18 @@
     <joint name="joint3" type="revolute">
         <parent link="link2"/>
         <child link="link3"/>
-        <origin xyz="0 0 0.3" rpy="0 0 0"/>
+        <origin xyz="0 0 0.25" rpy="0 0 0"/>  <!-- Adjusted for the length of link2 -->
         <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
-    <!-- Link 4 -->
+    <!-- Link 4 (280mm) -->
     <link name="link4">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.2"/>
+                <cylinder radius="0.02" length="0.28"/> <!-- Length adjusted to 280mm -->
             </geometry>
-            <origin xyz="0 0 0.1" rpy="0 0 0"/>  <!-- Centered along length -->
+            <origin xyz="0 0 0.14" rpy="0 0 0"/>  <!-- Centered along length -->
         </visual>
     </link>
 
@@ -82,7 +81,7 @@
     <joint name="joint4" type="revolute">
         <parent link="link3"/>
         <child link="link4"/>
-        <origin xyz="0 0 0.25" rpy="0 0 0"/>
+        <origin xyz="0 0 0.28" rpy="0 0 0"/>  <!-- Adjusted for the length of link3 -->
         <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
@@ -91,7 +90,7 @@
     <link name="link5">
         <visual>
             <geometry>
-                <cylinder radius="0.02" length="0.15"/>
+                <cylinder radius="0.02" length="0.15"/> <!-- Maintained as previously specified -->
             </geometry>
             <origin xyz="0 0 0.075" rpy="0 0 0"/>  <!-- Centered along length -->
         </visual>
@@ -101,7 +100,7 @@
     <joint name="joint5" type="revolute">
         <parent link="link4"/>
         <child link="link5"/>
-        <origin xyz="0 0 0.2" rpy="0 0 0"/>
+        <origin xyz="0 0 0.28" rpy="0 0 0"/>  <!-- Adjusted for the length of link4 -->
         <axis xyz="0 1 0"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
