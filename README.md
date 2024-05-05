@@ -90,6 +90,8 @@ import pybullet_data
 - `load_robot_and_object`: Initializes the simulation environment, loads the robot, and creates an object.
 - `setup_joint_control`: Sets up joint control for the robot.
 - `simulate_and_capture`: Runs the simulation, capturing joint states and end-effector positions.
+- `scale_timing.py`: used to give the user the ability to change only the simualtion time based on the slicer timing.
+
 
 
 ### Demos for the control 
