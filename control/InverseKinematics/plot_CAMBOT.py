@@ -1,6 +1,7 @@
 import pybullet as p
 import time
 import pybullet_data
+import math
 
 
 def load_robot_and_object(urdf_path, object_position):
@@ -42,9 +43,6 @@ def setup_joint_control(robot_id, initial_positions):
 
 
 def attach_camera_to_link(robot_id, link_id, target_position):
-    """
-    Attach camera to a robot link and dynamically adjust its position and orientation.
-    """
     com_p, com_o, _, _, _, _ = p.getLinkState(robot_id, link_id)
     rot_matrix = p.getMatrixFromQuaternion(com_o)
     camera_position = com_p
@@ -83,7 +81,8 @@ def simulate_and_capture(
     target_position=[0, 0, -0.58],
 ):
     end_effector_positions = []
-    joint_angles = []
+    joint_angles_radians = []
+    joint_angles_degrees = []
     joint_velocities = []
     joint_efforts = []
     last_link_id = p.getNumJoints(robot_id) - 1
@@ -108,45 +107,59 @@ def simulate_and_capture(
             end_effector_pos, _ = p.getLinkState(robot_id, last_link_id)[:2]
             end_effector_positions.append(end_effector_pos)
 
-            # Capture joint states (angles, velocities, efforts)
+            # Capture joint states (angles in radians and degrees, velocities, efforts)
             current_joint_states = [
                 p.getJointState(robot_id, joint) for joint, _ in joint_params
             ]
-            current_joint_angles = [state[0] for state in current_joint_states]
+            current_joint_angles_radians = [state[0] for state in current_joint_states]
+            current_joint_angles_degrees = [
+                math.degrees(state[0]) for state in current_joint_states
+            ]
             current_joint_velocities = [state[1] for state in current_joint_states]
             current_joint_efforts = [state[3] for state in current_joint_states]
 
-            joint_angles.append(current_joint_angles)
+            joint_angles_radians.append(current_joint_angles_radians)
+            joint_angles_degrees.append(current_joint_angles_degrees)
             joint_velocities.append(current_joint_velocities)
             joint_efforts.append(current_joint_efforts)
 
             time.sleep(step_interval)
 
-            # Write end-effector positions to file
+            # Write end-effector positions and joint data (radians and degrees) to file
             output_file_positions.write(
                 f"{current_time}, {end_effector_pos[0]}, {end_effector_pos[1]}, {end_effector_pos[2]}\n"
             )
-
-            # Write joint angles, velocities, and efforts to file
             output_file_joints.write(
                 f"{current_time}, "
-                + ", ".join(str(angle) for angle in current_joint_angles)
+                + ", ".join(
+                    f"{angle_rad:.2f}" for angle_rad in current_joint_angles_radians
+                )
                 + ", "
-                + ", ".join(str(vel) for vel in current_joint_velocities)
+                + ", ".join(
+                    f"{angle_deg:.2f}" for angle_deg in current_joint_angles_degrees
+                )
                 + ", "
-                + ", ".join(str(eff) for eff in current_joint_efforts)
+                + ", ".join(f"{vel:.2f}" for vel in current_joint_velocities)
+                + ", "
+                + ", ".join(f"{eff:.2f}" for eff in current_joint_efforts)
                 + "\n"
             )
 
             # Debug prints
             print(
-                f"Time: {current_time}s, End-effector position: {end_effector_pos}, Joint angles: {current_joint_angles}, Joint velocities: {current_joint_velocities}, Joint efforts: {current_joint_efforts}"
+                f"Time: {current_time}s, End-effector position: {end_effector_pos}, Joint angles (radians): {current_joint_angles_radians}, Joint angles (degrees): {current_joint_angles_degrees}, Joint velocities: {current_joint_velocities}, Joint efforts: {current_joint_efforts}"
             )
 
     except KeyboardInterrupt:
         print("Simulation stopped by user.")
 
-    return end_effector_positions, joint_angles, joint_velocities, joint_efforts
+    return (
+        end_effector_positions,
+        joint_angles_radians,
+        joint_angles_degrees,
+        joint_velocities,
+        joint_efforts,
+    )
 
 
 def main():
@@ -160,7 +173,11 @@ def main():
         "robot_end_effector_positions.csv", "w"
     ) as output_file_positions:
         output_file_joints.write(
-            "Time, Joint 1 Angle, Joint 2 Angle, Joint 3 Angle, Joint 4 Angle, Joint 5 Angle, Joint 1 Vel, Joint 2 Vel, Joint 3 Vel, Joint 4 Vel, Joint 5 Vel, Joint 1 Eff, Joint 2 Eff, Joint 3 Eff, Joint 4 Eff, Joint 5 Eff\n"
+            "Time, "
+            "Joint 1 Angle (Rad), Joint 2 Angle (Rad), Joint 3 Angle (Rad), Joint 4 Angle (Rad), Joint 5 Angle (Rad), "
+            "Joint 1 Angle (Deg), Joint 2 Angle (Deg), Joint 3 Angle (Deg), Joint 4 Angle (Deg), Joint 5 Angle (Deg), "
+            "Joint 1 Vel, Joint 2 Vel, Joint 3 Vel, Joint 4 Vel, Joint 5 Vel, "
+            "Joint 1 Eff, Joint 2 Eff, Joint 3 Eff, Joint 4 Eff, Joint 5 Eff\n"
         )
         output_file_positions.write("Time, X, Y, Z\n")
         simulate_and_capture(

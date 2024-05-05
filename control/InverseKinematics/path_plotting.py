@@ -8,13 +8,24 @@ def plot_joint_data(filename):
     data.columns = data.columns.str.strip()
     time = data["Time"]
 
-    # Plotting joint angles
+    # Plotting joint angles in radians
     plt.figure(figsize=(12, 8))
     for i in range(1, 6):  # Assuming there are 5 joints
-        plt.plot(time, data[f"Joint {i} Angle"], label=f"Joint {i} Angle")
-    plt.title("Joint Angles over Time")
+        plt.plot(time, data[f"Joint {i} Angle (Rad)"], label=f"Joint {i} Angle (Rad)")
+    plt.title("Joint Angles over Time in Radians")
     plt.xlabel("Time (s)")
-    plt.ylabel("Angle (rad)")
+    plt.ylabel("Angle (radians)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    # Plotting joint angles in degrees
+    plt.figure(figsize=(12, 8))
+    for i in range(1, 6):  # Assuming there are 5 joints
+        plt.plot(time, data[f"Joint {i} Angle (Deg)"], label=f"Joint {i} Angle (Deg)")
+    plt.title("Joint Angles over Time in Degrees")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Angle (degrees)")
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -42,12 +53,8 @@ def plot_joint_data(filename):
     plt.show()
 
 
-#### Plot End-Effector Positions
-
-
 def plot_end_effector_positions(filename):
     data = pd.read_csv(filename)
-
     data.columns = data.columns.str.strip()
     x = data["X"]
     y = data["Y"]
@@ -91,7 +98,6 @@ def plot_end_effector_positions(filename):
     plt.show()
 
 
-plot_joint_data("robot_joint_data.csv")  # Replace with the filename of your joint data
-plot_end_effector_positions(
-    "robot_end_effector_positions.csv"
-)  # Replace with the filename of your end-effector positions
+# Example usage, replace filenames with your actual file paths
+plot_joint_data("robot_joint_data.csv")
+plot_end_effector_positions("robot_end_effector_positions.csv")
