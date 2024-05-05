@@ -67,7 +67,8 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 - `plot_CAMBOT.py`
 - `path_plot.py`
 - `plot_with_camera.py`
-This Python scripts uses the PyBullet physics engine to simulate interactions between a robot and an object in a 3D environment. It demonstrates the loading of a robot from a URDF file, setting up joint controls, and capturing and logging various simulation data.
+
+- This Python scripts uses the PyBullet physics engine to simulate interactions between a robot and an object in a 3D environment. It demonstrates the loading of a robot from a URDF file, setting up joint controls, and capturing and logging various simulation data.
 
 ## Dependencies
 
