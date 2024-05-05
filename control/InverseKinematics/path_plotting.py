@@ -44,10 +44,6 @@ def plot_joint_data(filename):
 
 #### Plot End-Effector Positions
 
-import pandas as pd
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
 
 def plot_end_effector_positions(filename):
     data = pd.read_csv(filename)
@@ -60,15 +56,42 @@ def plot_end_effector_positions(filename):
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
+
+    # Plot end-effector path
     scatter = ax.scatter(x, y, z, c=time, cmap="viridis")
     cbar = fig.colorbar(scatter, ax=ax, orientation="vertical")
     cbar.set_label("Time (s)")
+
+    # Mark start position
+    ax.scatter(
+        x.iloc[0],
+        y.iloc[0],
+        z.iloc[0],
+        color="red",
+        label="Start Position",
+        s=100,
+        marker="o",
+    )
+    # Mark end position
+    ax.scatter(
+        x.iloc[-1],
+        y.iloc[-1],
+        z.iloc[-1],
+        color="green",
+        label="End Position",
+        s=100,
+        marker="s",
+    )
+
     ax.set_xlabel("X Position (m)")
     ax.set_ylabel("Y Position (m)")
     ax.set_zlabel("Z Position (m)")
     ax.set_title("3D Path of Robot End-Effector Over Time")
+    ax.legend()
     plt.show()
 
 
-plot_joint_data("robot_joint_data.csv")
-plot_end_effector_positions("robot_end_effector_positions.csv")
+plot_joint_data("robot_joint_data.csv")  # Replace with the filename of your joint data
+plot_end_effector_positions(
+    "robot_end_effector_positions.csv"
+)  # Replace with the filename of your end-effector positions

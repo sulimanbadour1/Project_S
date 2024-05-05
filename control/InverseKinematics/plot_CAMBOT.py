@@ -41,6 +41,38 @@ def setup_joint_control(robot_id, initial_positions):
     return joint_params
 
 
+def attach_camera_to_link(robot_id, link_id, target_position):
+    """
+    Attach camera to a robot link and dynamically adjust its position and orientation.
+    """
+    com_p, com_o, _, _, _, _ = p.getLinkState(robot_id, link_id)
+    rot_matrix = p.getMatrixFromQuaternion(com_o)
+    camera_position = com_p
+    camera_target_position = target_position
+    up_vector = [rot_matrix[2], rot_matrix[5], rot_matrix[8]]
+    view_matrix = p.computeViewMatrix(
+        camera_position, camera_target_position, up_vector
+    )
+    aspect = 960 / 720
+    fov = 60
+    near = 0.1
+    far = 100
+    projection_matrix = p.computeProjectionMatrixFOV(
+        fov=fov, aspect=aspect, nearVal=near, farVal=far
+    )
+    return view_matrix, projection_matrix
+
+
+def capture_camera_data(view_matrix, projection_matrix):
+    width, height, rgbImg, depthImg, segImg = p.getCameraImage(
+        width=960,
+        height=720,
+        viewMatrix=view_matrix,
+        projectionMatrix=projection_matrix,
+    )
+    print("Captured images.")
+
+
 def simulate_and_capture(
     robot_id,
     object_id,
@@ -48,6 +80,7 @@ def simulate_and_capture(
     output_file_joints,
     output_file_positions,
     step_interval=1.0 / 240.0,
+    target_position=[0, 0, -0.58],
 ):
     end_effector_positions = []
     joint_angles = []
@@ -67,6 +100,10 @@ def simulate_and_capture(
                     robot_id, joint, p.POSITION_CONTROL, targetPosition=param_value
                 )
 
+            view_matrix, projection_matrix = attach_camera_to_link(
+                robot_id, last_link_id, target_position
+            )
+            capture_camera_data(view_matrix, projection_matrix)
             # Capture end-effector position
             end_effector_pos, _ = p.getLinkState(robot_id, last_link_id)[:2]
             end_effector_positions.append(end_effector_pos)
