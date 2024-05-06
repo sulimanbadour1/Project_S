@@ -62,14 +62,13 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 # 2- Control 
 ## Real-time Robot Arm Movement Visualization + IK
 
+### The name of the Robot is **CAMBOT**.
+
 |**CAMBOT**|
 |--------------------|
 | ![CAMBOT 2d](demos/cambot.PNG) |
 
-
-### The name of the Robot is **CAMBOT**.
-
-
+### Scripts 
 
 - `plot_CAMBOT.py`
 - `path_plot.py`
