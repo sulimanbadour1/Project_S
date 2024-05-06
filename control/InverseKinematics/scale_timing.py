@@ -1,14 +1,21 @@
 import csv
 
 
-def read_data(file_path, columns):
+def read_data(file_path, columns=None):
     data = []
     with open(file_path, "r") as file:
         reader = csv.reader(file)
-        next(reader)  # Skip header
+        header = next(reader)  # Read and store header for debugging
+        print("Header:", header)  # Debug print to check the actual headers
         for row in reader:
             entry = [float(val) for val in row]
-            data.append(entry if columns is None else [entry[i] for i in columns])
+            # Safeguard against out of range indices
+            filtered_entry = (
+                [entry[i] for i in columns if i < len(entry)]
+                if columns is not None
+                else entry
+            )
+            data.append(filtered_entry)
     return data
 
 
@@ -29,21 +36,22 @@ def apply_timing(data, time_scale_factor):
 
 
 def main():
+    # Adjusted columns index after checking the CSV structure
+    columns_for_joint_data = [
+        0,
+        *range(1, 31),
+    ]  # Update this based on the CSV file structure
+
     # Read the data from the output files
-    end_effector_positions = read_data("robot_end_effector_positions.csv", None)
-    joint_data = read_data("robot_joint_data.csv", [0, *range(1, 16)])
+    end_effector_positions = read_data("robot_end_effector_positions.csv")
+    joint_data = read_data("robot_joint_data.csv", columns_for_joint_data)
 
     # Calculate the simulation time
     simulation_time = calculate_simulation_time(end_effector_positions)
     print(f"Simulation time: {simulation_time} seconds")
 
     # Prompt the user for desired timing
-    while True:
-        try:
-            desired_timing = float(input("Enter the desired timing in seconds: "))
-            break
-        except ValueError:
-            print("Please enter a valid number.")
+    desired_timing = float(input("Enter the desired timing in seconds: "))
 
     # Calculate the time scale factor
     time_scale_factor = desired_timing / simulation_time
@@ -52,7 +60,7 @@ def main():
     apply_timing(end_effector_positions, time_scale_factor)
     apply_timing(joint_data, time_scale_factor)
 
-    # Write the scaled data to existing files by modifying the time column
+    # Write the scaled data to new files
     write_data(
         "robot_end_effector_positions_scaled.csv",
         end_effector_positions,
@@ -63,11 +71,16 @@ def main():
         joint_data,
         [
             "Time",
-            "Joint 1 Angle",
-            "Joint 2 Angle",
-            "Joint 3 Angle",
-            "Joint 4 Angle",
-            "Joint 5 Angle",
+            "Joint 1 Angle (Rad)",
+            "Joint 2 Angle (Rad)",
+            "Joint 3 Angle (Rad)",
+            "Joint 4 Angle (Rad)",
+            "Joint 5 Angle (Rad)",
+            "Joint 1 Angle (Deg)",
+            "Joint 2 Angle (Deg)",
+            "Joint 3 Angle (Deg)",
+            "Joint 4 Angle (Deg)",
+            "Joint 5 Angle (Deg)",
             "Joint 1 Vel",
             "Joint 2 Vel",
             "Joint 3 Vel",
