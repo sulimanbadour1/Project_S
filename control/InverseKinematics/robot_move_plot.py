@@ -49,7 +49,7 @@ def visualize_robot_with_trajectory(urdf_path, joint_data_file, end_effector_fil
                 )
             prev_position = end_effector_position
 
-        time.sleep(0.1)  # Adjust sleep time as needed for the speed of visualization
+        time.sleep(0.05)  # Adjust sleep time as needed for the speed of visualization
 
     p.disconnect()
 
