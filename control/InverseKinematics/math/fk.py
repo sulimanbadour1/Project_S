@@ -1,68 +1,112 @@
-from sympy import symbols, cos, sin, pi, Matrix
+import sympy as sp
 
-# Define the symbolic variables for joint angles
-theta1, theta2, theta3, theta4, theta5 = symbols("theta1 theta2 theta3 theta4 theta5")
-
-# DH Parameters
-d1, a1, alpha1 = 0.05, 0.03, 0
-d2, a2, alpha2 = 0, 0.25, 0
-d3, a3, alpha3 = 0, 0.28, 0
-d4, a4, alpha4 = 0, 0.28, 0
-d5, a5, alpha5 = 0, 0.15, 0
+# Define symbols for joint angles
+theta1, theta2, theta3, theta4, theta5 = sp.symbols(
+    "theta1 theta2 theta3 theta4 theta5"
+)
 
 
-# Define the transformation matrix using DH parameters
-def DH_matrix(theta, d, a, alpha):
-    return Matrix(
+# Define transformation matrix using DH parameters
+def DH_transform(a, alpha, d, theta):
+    return sp.Matrix(
         [
             [
-                cos(theta),
-                -sin(theta) * cos(alpha),
-                sin(theta) * sin(alpha),
-                a * cos(theta),
+                sp.cos(theta),
+                -sp.sin(theta) * sp.cos(alpha),
+                sp.sin(theta) * sp.sin(alpha),
+                a * sp.cos(theta),
             ],
             [
-                sin(theta),
-                cos(theta) * cos(alpha),
-                -cos(theta) * sin(alpha),
-                a * sin(theta),
+                sp.sin(theta),
+                sp.cos(theta) * sp.cos(alpha),
+                -sp.cos(theta) * sp.sin(alpha),
+                a * sp.sin(theta),
             ],
-            [0, sin(alpha), cos(alpha), d],
+            [0, sp.sin(alpha), sp.cos(alpha), d],
             [0, 0, 0, 1],
         ]
     )
 
 
-# Compute individual transformation matrices
-T1 = DH_matrix(theta1, d1, a1, alpha1)
-T2 = DH_matrix(theta2, d2, a2, alpha2)
-T3 = DH_matrix(theta3, d3, a3, alpha3)
-T4 = DH_matrix(theta4, d4, a4, alpha4)
-T5 = DH_matrix(theta5, d5, a5, alpha5)
+# DH Parameters for each joint
+params = [
+    (0, 0, 0.05, theta1),  # Joint 1
+    (0.03, sp.pi / 2, 0, theta2),  # Joint 2
+    (0.25, 0, 0, theta3),  # Joint 3
+    (0.28, 0, 0, theta4),  # Joint 4
+    (0.28, 0, 0, theta5),  # Joint 5
+]
 
-# Overall transformation matrix from the base to the end-effector
-T = T1 * T2 * T3 * T4 * T5
-T
-# print(T)
+# Calculate the total transformation matrix
+T = sp.eye(4)
+for p in params:
+    T *= DH_transform(*p)
+
+T  # Display the resulting transformation matrix from base to end-effector
+print(T)
 
 
-# Define some example joint angles in radians
-theta1_val = pi / 4  # 45 degrees
-theta2_val = pi / 6  # 30 degrees
-theta3_val = -pi / 6  # -30 degrees
-theta4_val = pi / 3  # 60 degrees
-theta5_val = -pi / 4  # -45 degrees
+### verify the result
+import sympy as sp
 
-# Substitute the angles into the transformation matrix
-T_numerical = T.subs(
-    {
-        theta1: theta1_val,
-        theta2: theta2_val,
-        theta3: theta3_val,
-        theta4: theta4_val,
-        theta5: theta5_val,
-    }
+# Define symbols for joint angles
+theta1, theta2, theta3, theta4, theta5 = sp.symbols(
+    "theta1 theta2 theta3 theta4 theta5"
 )
 
-T_numerical.evalf()  # Numerically evaluate the matrix
-print(T_numerical.evalf())
+
+# Define transformation matrix using DH parameters
+def DH_transform(a, alpha, d, theta):
+    return sp.Matrix(
+        [
+            [
+                sp.cos(theta),
+                -sp.sin(theta) * sp.cos(alpha),
+                sp.sin(theta) * sp.sin(alpha),
+                a * sp.cos(theta),
+            ],
+            [
+                sp.sin(theta),
+                sp.cos(theta) * sp.cos(alpha),
+                -sp.cos(theta) * sp.sin(alpha),
+                a * sp.sin(theta),
+            ],
+            [0, sp.sin(alpha), sp.cos(alpha), d],
+            [0, 0, 0, 1],
+        ]
+    )
+
+
+# DH Parameters for each joint
+params = [
+    (0, 0, 0.05, theta1),  # Joint 1
+    (0.03, sp.pi / 2, 0, theta2),  # Joint 2
+    (0.25, 0, 0, theta3),  # Joint 3
+    (0.28, 0, 0, theta4),  # Joint 4
+    (0.28, 0, 0, theta5),  # Joint 5
+]
+
+# Calculate the total transformation matrix
+T = sp.eye(4)
+for a, alpha, d, theta in params:
+    T *= DH_transform(a, alpha, d, theta)
+
+# Substitute specific joint angles to evaluate
+joint_values = {
+    theta1: sp.pi / 6,
+    theta2: -sp.pi / 4,
+    theta3: sp.pi / 4,
+    theta4: -sp.pi / 6,
+    theta5: sp.pi / 12,
+}
+T_evaluated = T.subs(joint_values)
+
+# Display the evaluated transformation matrix
+print("Evaluated Transformation Matrix:")
+print(T_evaluated)
+
+# Calculate specific position for verification
+# Extract the position part of the transformation matrix
+position = T_evaluated[:3, 3]
+print("Position of the end-effector:")
+print(position)
