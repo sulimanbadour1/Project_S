@@ -41,7 +41,7 @@ def main():
     robot_id = load_robot(urdf_path)
 
     # Define desired joint angles for forward kinematics
-    joint_angles = [0.0, 1.57, -1.57, 1.57, -1.57]  # Example joint angles in radians
+    joint_angles = [0.0, 0, -1.57, 1.57, -1.57]  # Example joint angles in radians
     position, orientation = compute_forward_kinematics(robot_id, joint_angles)
     print("Forward Kinematics - Position:", position)
     print("Forward Kinematics - Orientation:", orientation)
