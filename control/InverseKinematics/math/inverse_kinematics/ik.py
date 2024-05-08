@@ -21,9 +21,9 @@ def inverse_kinematics(x_d, y_d, z_d, l1=0.03, l2=0.25, l3=0.28, d1=0.05):
 
 
 # Assuming you want to calculate for some end-effector position (x_d, y_d, z_d)
-x_d = 0.286  # Desired x position
-y_d = 0.861  # Desired y position
-z_d = 0.05  # Desired z position
+x_d = 0  # Desired x position
+y_d = 0  # Desired y position
+z_d = 0  # Desired z position
 
 # Calculate the inverse kinematics
 theta1, theta2, theta3 = inverse_kinematics(x_d, y_d, z_d)
