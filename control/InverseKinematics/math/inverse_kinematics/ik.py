@@ -1,32 +1,83 @@
 import numpy as np
+from scipy.optimize import minimize
+from numpy import cos, sin, pi
+
+# Define the Denavit-Hartenberg parameters for each joint
+# Each row: [theta, d, a, alpha]
+DH_params = np.array(
+    [
+        [-pi, 0.05, 0, 0],
+        [-pi / 6, 0, 0.03, pi / 2],
+        [-pi / 6, 0, 0.25, 0],
+        [-pi / 6, 0, 0.28, 0],
+        [-pi / 6, 0, 0.28, 0],
+    ]
+)
 
 
-def inverse_kinematics(x_d, y_d, z_d, l1=0.03, l2=0.25, l3=0.28, d1=0.05):
-    # Calculate theta1
-    theta1 = np.degrees(np.arctan2(y_d, x_d))
+def transformation_matrix(theta, d, a, alpha):
+    """Compute individual transformation matrix for given DH parameters"""
+    return np.array(
+        [
+            [
+                cos(theta),
+                -sin(theta) * cos(alpha),
+                sin(theta) * sin(alpha),
+                a * cos(theta),
+            ],
+            [
+                sin(theta),
+                cos(theta) * cos(alpha),
+                -cos(theta) * sin(alpha),
+                a * sin(theta),
+            ],
+            [0, sin(alpha), cos(alpha), d],
+            [0, 0, 0, 1],
+        ]
+    )
 
-    # Project target onto plane adjusted for the first link and base height
-    x_prime = np.sqrt(x_d**2 + y_d**2) - l1
-    y_prime = z_d - d1
 
-    # Use the law of cosines to solve for theta2 and theta3
-    c2 = (x_prime**2 + y_prime**2 - l2**2 - l3**2) / (2 * l2 * l3)
-    theta3 = np.degrees(np.arccos(c2))
-
-    k1 = l2 + l3 * c2
-    k2 = l3 * np.sqrt(1 - c2**2)
-    theta2 = np.degrees(np.arctan2(y_prime, x_prime) - np.arctan2(k2, k1))
-
-    return theta1, theta2, theta3
+def forward_kinematics(thetas):
+    """Compute the overall transformation matrix for given joint angles"""
+    T = np.eye(4)
+    for i, (theta, d, a, alpha) in enumerate(DH_params):
+        T_i = transformation_matrix(theta + thetas[i], d, a, alpha)
+        T = np.dot(T, T_i)
+    return T
 
 
-# Assuming you want to calculate for some end-effector position (x_d, y_d, z_d)
-x_d = 0  # Desired x position
-y_d = 0  # Desired y position
-z_d = 0  # Desired z position
+def objective_function(thetas, target_position):
+    """Objective function to minimize: the Euclidean distance from the current end-effector position to the target"""
+    T = forward_kinematics(thetas)
+    end_effector_pos = T[
+        :3, 3
+    ]  # Extract position from the last column of the transformation matrix
+    return np.linalg.norm(end_effector_pos - target_position)
 
-# Calculate the inverse kinematics
-theta1, theta2, theta3 = inverse_kinematics(x_d, y_d, z_d)
-print("Theta 1:", theta1, "degrees")
-print("Theta 2:", theta2, "degrees")
-print("Theta 3:", theta3, "degrees")
+
+# Target position for the end-effector
+target_position = np.array([0.3, -0.2, 0.5])
+
+# Initial guess for the joint angles (in radians)
+initial_guess = np.array([-pi / 2, -pi / 6, -pi / 6, -pi / 6, -pi / 6])
+
+# Minimize the objective function
+result = minimize(
+    objective_function, initial_guess, args=(target_position), method="BFGS"
+)
+
+# Display the computed joint angles
+joint_angles_degrees = np.degrees(result.x)
+result, joint_angles_degrees
+
+print("Optimization result:")
+print(result)
+
+
+print("Target position:")
+print(target_position)
+print("Target Angles:")
+
+print("\n")
+print("Joint angles in degrees:")
+print(joint_angles_degrees)
