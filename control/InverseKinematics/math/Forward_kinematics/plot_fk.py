@@ -7,11 +7,11 @@ from sympy import symbols, cos, sin, pi, Matrix, N
 theta1, theta2, theta3, theta4, theta5 = symbols("theta1 theta2 theta3 theta4 theta5")
 
 # DH Parameters
-d1, a1, alpha1 = 0.05, 0, 0
-d2, a2, alpha2 = 0, 0.03, pi / 2
-d3, a3, alpha3 = 0, 0.25, 0
-d4, a4, alpha4 = 0, 0.28, 0
-d5, a5, alpha5 = 0, 0.28, 0
+d1, a1, alpha1 = 0.1, 0, pi / 2
+d2, a2, alpha2 = 0, 0.3, 0
+d3, a3, alpha3 = 0, 0.3, 0
+d4, a4, alpha4 = 0, 0.3, 0
+d5, a5, alpha5 = 0, 0.1, 0
 
 
 # Define the transformation matrix function using DH parameters
@@ -38,11 +38,11 @@ def DH_matrix(theta, d, a, alpha):
 
 # Define joint angles in radians
 angles = {
-    theta1: -pi,
-    theta2: -pi / 6,
-    theta3: -pi / 6,
-    theta4: -pi / 6,
-    theta5: -pi / 6,
+    theta1: 0,
+    theta2: pi / 2,
+    theta3: 0,
+    theta4: 0,
+    theta5: 0,
 }
 
 # Compute transformation matrices
