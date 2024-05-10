@@ -6,11 +6,11 @@ from numpy import cos, sin, pi
 # Each row: [theta, d, a, alpha]
 DH_params = np.array(
     [
-        [-pi, 0.05, 0, 0],
-        [-pi / 6, 0, 0.03, pi / 2],
-        [-pi / 6, 0, 0.25, 0],
-        [-pi / 6, 0, 0.28, 0],
-        [-pi / 6, 0, 0.28, 0],
+        [-pi, 0.05, 0, 0],  # Joint 1
+        [-pi / 6, 0, 0.03, pi / 2],  # Joint 2
+        [-pi / 6, 0, 0.25, 0],  # Joint 3
+        [-pi / 6, 0, 0.28, 0],  # Joint 4
+        [-pi / 6, 0, 0.28, 0],  # Joint 5
     ]
 )
 
@@ -66,18 +66,21 @@ result = minimize(
     objective_function, initial_guess, args=(target_position), method="BFGS"
 )
 
-# Display the computed joint angles
-joint_angles_degrees = np.degrees(result.x)
-result, joint_angles_degrees
+# Validate the results with forward kinematics
+joint_angles_optimized = result.x
+T_final = forward_kinematics(joint_angles_optimized)
+computed_position = T_final[:3, 3]
 
-print("Optimization result:")
-print(result)
-
-
-print("Target position:")
-print(target_position)
-print("Target Angles:")
-
-print("\n")
-print("Joint angles in degrees:")
-print(joint_angles_degrees)
+# Comparison and output
+tolerance = 1e-3
+print("Optimization Result:")
+print("Success:", result.success)
+print("Message:", result.message)
+print("Joint Angles (Radians):", joint_angles_optimized)
+print("Computed Position:", computed_position)
+print("Target Position:", target_position)
+print("Difference:", np.abs(computed_position - target_position))
+print(
+    "Is the computed position within tolerance?",
+    np.all(np.abs(computed_position - target_position) < tolerance),
+)

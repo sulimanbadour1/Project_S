@@ -86,23 +86,24 @@
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
-    <!-- Link 5 -->
-    <link name="link5">
-        <visual>
-            <geometry>
-                <cylinder radius="0.02" length="0.15"/> <!-- Maintained as previously specified -->
-            </geometry>
-            <origin xyz="0 0 0.075" rpy="0 0 0"/>  <!-- Centered along length -->
-        </visual>
-    </link>
+<!-- Link 5 - Camera Base -->
+<link name="link5">
+    <visual>
+        <geometry>
+            <box size="0.05 0.05 0.02"/> <!-- Size of the box acting as camera base -->
+        </geometry>
+        <origin xyz="0 0 0.01" rpy="0 0 0"/>  <!-- Centered along height -->
+    </visual>
+</link>
 
-    <!-- Joint 5 -->
-    <joint name="joint5" type="revolute">
-        <parent link="link4"/>
-        <child link="link5"/>
-        <origin xyz="0 0 0.28" rpy="0 0 0"/>  <!-- Adjusted for the length of link4 -->
-        <axis xyz="0 1 0"/>
-        <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
-    </joint>
+<!-- Joint 5 -->
+<joint name="joint5" type="revolute">
+    <parent link="link4"/>
+    <child link="link5"/>
+    <origin xyz="0 0 0.28" rpy="0 0 0"/>  <!-- Adjusted for the length of link4 -->
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
+</joint>
+
 
 </robot>
