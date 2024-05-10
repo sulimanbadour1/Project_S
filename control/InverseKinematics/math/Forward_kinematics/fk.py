@@ -85,7 +85,7 @@ def DH_matrix(theta, d, a, alpha):
 
 
 # Joint angles in degrees
-theta_degrees = [0, 90, 0, 0, 0]
+theta_degrees = [0, 0, 0, 0, 0]
 
 # DH Parameters: theta (degrees), d, a, alpha (degrees)
 dh_parameters = [

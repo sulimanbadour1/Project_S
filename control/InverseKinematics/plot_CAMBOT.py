@@ -164,7 +164,7 @@ def simulate_and_capture(
 
 def main():
     urdf_path = "urdfs/s.urdf"
-    initial_positions = [-3.142, 1.571, 0.959, 0.529, 1.422]
+    initial_positions = [-3.14, 1.57, 0.959, 0.529, 1.422]
     object_position = [0, 0, -0.58]  # Position under the robot
     robot_id, object_id = load_robot_and_object(urdf_path, object_position)
     joint_params = setup_joint_control(robot_id, initial_positions)

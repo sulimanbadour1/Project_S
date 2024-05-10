@@ -37,13 +37,7 @@ def DH_matrix(theta, d, a, alpha):
 
 
 # Define joint angles in radians
-angles = {
-    theta1: 0,
-    theta2: pi / 2,
-    theta3: 0,
-    theta4: 0,
-    theta5: 0,
-}
+angles = {theta1: 0, theta2: 0, theta3: 0, theta4: -90, theta5: 0}
 
 # Compute transformation matrices
 T1 = DH_matrix(theta1, d1, a1, alpha1).subs(angles)
@@ -61,12 +55,12 @@ T05 = T04 * T5
 
 # Extract positions
 positions = [
-    Matrix([0, 0, 0, 1]),
+    Matrix([0, 0, 0, 1]),  # Base
     T01[:3, 3],
     T02[:3, 3],
     T03[:3, 3],
     T04[:3, 3],
-    T05[:3, 3],
+    T05[:3, 3],  # End effector
 ]
 positions = [N(p) for p in positions]  # Evaluate numerically
 
@@ -79,18 +73,24 @@ ax2 = fig.add_subplot(122, projection="3d")
 x_vals = [p[0] for p in positions]
 y_vals = [p[1] for p in positions]
 ax1.plot(x_vals, y_vals, "bo-")
+ax1.plot(x_vals[0], y_vals[0], "go")  # Base in green
+ax1.plot(x_vals[-1], y_vals[-1], "mo")  # End effector in magenta
 ax1.set_title("2D View")
 ax1.set_xlabel("X")
 ax1.set_ylabel("Y")
+ax1.legend(["Path", "Base", "End Effector"])
 
 # 3D plot
 x_vals = [p[0] for p in positions]
 y_vals = [p[1] for p in positions]
 z_vals = [p[2] for p in positions]
 ax2.plot(x_vals, y_vals, z_vals, "ro-")
+ax2.plot(x_vals[0], y_vals[0], z_vals[0], "go")  # Base in green
+ax2.plot(x_vals[-1], y_vals[-1], z_vals[-1], "mo")  # End effector in magenta
 ax2.set_title("3D View")
 ax2.set_xlabel("X")
 ax2.set_ylabel("Y")
 ax2.set_zlabel("Z")
+ax2.legend(["Path", "Base", "End Effector"])
 
 plt.show()
