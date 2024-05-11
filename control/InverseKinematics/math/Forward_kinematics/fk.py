@@ -45,7 +45,7 @@ A1 = dh_matrix(theta_1, d_1, 0, 90)
 A2 = dh_matrix(theta_2, 0, a_2, 0)
 A3 = dh_matrix(theta_3, 0, a_3, 0)
 A4 = dh_matrix(theta_4, 0, a_4, 0)
-A5 = dh_matrix(theta_5, 0, a_5, 0)
+A5 = dh_matrix(theta_5, 0, 0, 0)
 
 # Compute the overall transformation matrix by multiplying individual matrices
 T = A1 * A2 * A3 * A4 * A5
@@ -99,7 +99,7 @@ dh_parameters = [
 # Define actual values for d1, a2, a3, a4, a5 if known, or use placeholders
 d1 = 0.1  # Example value for d1
 a2 = a3 = a4 = 0.3  # Example values for ai
-a5 = 0.1  # Example value for a5
+a5 = 0  # Example value for a5
 
 
 # Compute individual transformation matrices with joint angles

@@ -11,7 +11,7 @@ d1, a1, alpha1 = 0.1, 0, pi / 2
 d2, a2, alpha2 = 0, 0.3, 0
 d3, a3, alpha3 = 0, 0.3, 0
 d4, a4, alpha4 = 0, 0.3, 0
-d5, a5, alpha5 = 0, 0.1, 0
+d5, a5, alpha5 = 0, 0, 0
 
 
 # Define the transformation matrix function using DH parameters
@@ -37,7 +37,7 @@ def DH_matrix(theta, d, a, alpha):
 
 
 # Define joint angles in radians
-angles = {theta1: 0, theta2: 0, theta3: 0, theta4: -90, theta5: 0}
+angles = {theta1: 0, theta2: 0, theta3: 0, theta4: 0, theta5: 0}
 
 # Compute transformation matrices
 T1 = DH_matrix(theta1, d1, a1, alpha1).subs(angles)
