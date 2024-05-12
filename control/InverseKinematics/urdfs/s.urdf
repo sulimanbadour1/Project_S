@@ -96,12 +96,12 @@
         </visual>
     </link>
 
-    <!-- Joint 5 -->
+    <!-- Joint 5 - Modified to rotate around Z-axis -->
     <joint name="joint5" type="revolute">
         <parent link="link4"/>
         <child link="link5"/>
         <origin xyz="0 0 0.3" rpy="0 0 0"/>  <!-- Adjusted for the length of link4 -->
-        <axis xyz="0 1 0"/>
+        <axis xyz="0 0 1"/>
         <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="1.0"/>
     </joint>
 
