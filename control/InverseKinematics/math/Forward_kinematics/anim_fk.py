@@ -7,6 +7,14 @@ from sympy import symbols, cos, sin, pi, Matrix, N
 # Define symbolic variables
 theta1, theta2, theta3, theta4, theta5 = symbols("theta1 theta2 theta3 theta4 theta5")
 # DH Parameters
+# d1, a1, alpha1 = 0.1, 0, pi / 2
+# d2, a2, alpha2 = 0, 0.5, 0
+# d3, a3, alpha3 = 0, 0.5, 0
+# d4, a4, alpha4 = 0, 0, pi / 2
+# d5, a5, alpha5 = 0.1, 0, 0
+
+
+# DH Parameters
 d1, a1, alpha1 = 0.1, 0, pi / 2
 d2, a2, alpha2 = 0, 0.5, 0
 d3, a3, alpha3 = 0, 0.5, 0
