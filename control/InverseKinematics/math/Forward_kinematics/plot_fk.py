@@ -37,7 +37,7 @@ def DH_matrix(theta, d, a, alpha):
 
 
 # Define joint angles in radians
-angles = {theta1: 0, theta2: pi / 6, theta3: -pi / 8, theta4: pi / 2, theta5: 0}
+angles = {theta1: 0, theta2: pi / 2, theta3: 0, theta4: 0, theta5: 0}
 
 # Compute transformation matrices
 T1 = DH_matrix(theta1, d1, a1, alpha1).subs(angles)
@@ -63,6 +63,12 @@ positions = [
     T05[:3, 3],  # End effector
 ]
 positions = [N(p) for p in positions]  # Evaluate numerically
+
+
+# Print the end effector position
+end_effector_position = positions[-1]
+print(f"End Effector Position: {end_effector_position}")
+
 
 # Plotting
 fig = plt.figure()
