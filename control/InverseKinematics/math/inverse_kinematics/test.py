@@ -19,7 +19,7 @@ def inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega):
     S = math.sqrt((Pzw - d1) ** 2 + Rw**2)
 
     # Calculate theta1
-    theta1 = math.degrees(math.atan2(Py, Px))
+    theta1 = math.degrees(math.atan2(Py, Px)) % 360
 
     # Calculate alpha and beta
     beta = math.degrees(math.acos((S**2 + a2**2 - a3**2) / (2 * a2 * S)))
@@ -27,19 +27,24 @@ def inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega):
 
     # Calculate theta2
     theta2 = alpha + beta
-    # or
     theta2_alt = alpha - beta
+    theta2 = max(0, min(theta2, 60))
+    theta2_alt = max(0, min(theta2_alt, 60))
 
     # Calculate theta3
     theta3 = math.degrees(math.acos((S**2 - a2**2 - a3**2) / (2 * a2 * a3)))
-    # or
     theta3_alt = -math.degrees(math.acos((S**2 - a2**2 - a3**2) / (2 * a2 * a3)))
+    theta3 = max(-45, min(theta3, 45))
+    theta3_alt = max(-45, min(theta3_alt, 45))
 
     # Calculate theta234
     theta234 = 90 - omega
 
     # Calculate theta4
     theta4 = theta234 - theta2 - theta3
+    theta4_alt = theta234 - theta2_alt - theta3_alt
+    theta4 = max(-45, min(theta4, 45))
+    theta4_alt = max(-45, min(theta4_alt, 45))
 
     return theta1, theta2, theta3, theta4
 
@@ -101,14 +106,14 @@ def plot_robot(Px, Py, Pz, d1, a2, a3, d5, theta1, theta2, theta3, theta4):
 
 
 # Example parameters
-Px = 0.1
+Px = 0.4
 Py = 0
-Pz = 1.1
+Pz = -0.2
 d1 = 0.1
 a2 = 0.5
 a3 = 0.5
 d5 = 0.1
-omega = -90
+omega = 90
 
 (
     theta1,
@@ -120,10 +125,10 @@ print(f"Theta1: {theta1} degrees")
 print(f"Theta2: {theta2} degrees")
 print(f"Theta3: {theta3} degrees")
 print(f"Theta4: {theta4} degrees")
-# print the end effector position
+
+# Print the end effector position
 end_effector_position = [Px, Py, Pz]
 print(f"End Effector Position: {end_effector_position}")
-
 
 print("Plotting robot...")
 
