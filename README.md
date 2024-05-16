@@ -59,7 +59,7 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 
 
 
-# 2- Control 
+# 2- Modeling and simulations 
 ## Real-time Robot Arm Movement Visualization + IK
 
 ### The name of the Robot is **CAMBOT**.
