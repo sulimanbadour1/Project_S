@@ -66,7 +66,7 @@ Watch both 2D and 3D animations to understand the camera's coverage.
 
 |**CAMBOT**|
 |--------------------|
-| ![CAMBOT 2d](demos/cambot.PNG) |
+| ![CAMBOT 2d](demos/cambot.jpg) |
 
 ### Scripts 
 
