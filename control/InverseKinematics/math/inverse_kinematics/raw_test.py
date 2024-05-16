@@ -19,7 +19,7 @@ def inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega):
 
     Pxw = Px - R * math.cos(theta1_rad)
     Pyw = Py - R * math.sin(theta1_rad)
-    Pzw = Pz - d5 * math.sin(math.radians(omega))
+    Pzw = Pz + d5 * math.sin(math.radians(omega))
 
     # Calculate Rw and S
     Rw = math.sqrt(Pxw**2 + Pyw**2)
@@ -65,9 +65,17 @@ def forward_kinematics(d1, a2, a3, d5, theta1, theta2, theta3, theta4):
     y3 = y2 + a3 * math.sin(theta1) * math.cos(theta2 + theta3)
     z3 = z2 + a3 * math.sin(theta2 + theta3)
 
-    x4 = x3 + d5 * math.cos(theta1) * math.cos(theta2 + theta3 + theta4)
-    y4 = y3 + d5 * math.sin(theta1) * math.cos(theta2 + theta3 + theta4)
-    z4 = z3 + d5 * math.sin(theta2 + theta3 + theta4)
+    x4 = x3 + d5
+    y4 = y3
+    z4 = z3
+
+    print("Joint Positions:\n")
+    print(f"x0: {x0}, y0: {y0}, z0: {z0}")
+    print(f"x1: {x1}, y1: {y1}, z1: {z1}")
+    print(f"x2: {x2}, y2: {y2}, z2: {z2}")
+    print(f"x3: {x3}, y3: {y3}, z3: {z3}")
+    print(f"x4: {x4}, y4: {y4}, z4: {z4}")
+    print("\n")
 
     return [(x0, y0, z0), (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4)]
 
@@ -103,8 +111,8 @@ def plot_robot(joint_positions):
 
 
 # Example parameters
-Px, Py, Pz = 0.8, 0, -0.4
-omega = 45
+Px, Py, Pz = 1, 0, 0
+omega = 0
 theta1, theta2, theta3, theta4 = inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega)
 print(f"Theta1: {theta1} degrees")
 print(f"Theta2: {theta2} degrees")
