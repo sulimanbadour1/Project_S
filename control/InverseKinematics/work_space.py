@@ -53,7 +53,7 @@ def generate_workspace(chain, n_samples, joint_limits):
 
 
 # Generate workspace points
-workspace = generate_workspace(robot_chain, 1000, limits)
+workspace = generate_workspace(robot_chain, 5000, limits)
 
 # Plotting the workspace
 fig = plt.figure()
