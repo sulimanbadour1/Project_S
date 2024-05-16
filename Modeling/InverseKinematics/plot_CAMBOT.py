@@ -103,6 +103,7 @@ def simulate_and_capture(
                 robot_id, last_link_id, target_position
             )
             capture_camera_data(view_matrix, projection_matrix)
+
             # Capture end-effector position
             end_effector_pos, _ = p.getLinkState(robot_id, last_link_id)[:2]
             end_effector_positions.append(end_effector_pos)

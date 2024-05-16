@@ -5,7 +5,7 @@
     <link name="base">
         <visual>
             <geometry>
-                <box size="0.07 0.07 0.07"/>  <!-- Base size 70mm x 70mm x 70mm -->
+                <box size="0.07 0.07 0.1"/>  <!-- Base size 70mm x 70mm x 100mm -->
             </geometry>
         </visual>
     </link>
@@ -24,7 +24,7 @@
     <joint name="joint1" type="revolute">
         <parent link="base"/>
         <child link="link1"/>
-        <origin xyz="0 0 0.03" rpy="0 0 0"/> <!-- Origin for rotation, placed 70mm above the base -->
+        <origin xyz="0 0 0.1" rpy="0 0 0"/> <!-- Origin for rotation, placed 100mm above the base -->
         <axis xyz="0 0 1"/>
         <limit lower="-3.14159" upper="3.14159" effort="1000" velocity="1.0"/>
     </joint>
