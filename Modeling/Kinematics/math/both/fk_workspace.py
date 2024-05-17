@@ -74,16 +74,33 @@ for theta_1 in theta_1_range:
 # Plot the workspace
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
-ax.scatter(positions[:, 0], positions[:, 1], positions[:, 2], c="b", marker="o")
+ax.scatter(
+    positions[:, 0], positions[:, 1], positions[:, 2], c="b", marker="o", s=1
+)  # Set the point size to 10
 
+# Set labels and title
 ax.set_xlabel("X axis")
 ax.set_ylabel("Y axis")
 ax.set_zlabel("Z axis")
 ax.set_title("Workspace of the Robot")
 
-# Print the limits on each axis
-print(f"X axis limits: {positions[:, 0].min()} to {positions[:, 0].max()}")
-print(f"Y axis limits: {positions[:, 1].min()} to {positions[:, 1].max()}")
-print(f"Z axis limits: {positions[:, 2].min()} to {positions[:, 2].max()}")
+# Calculate and print the limits on each axis
+x_min, x_max = positions[:, 0].min(), positions[:, 0].max()
+y_min, y_max = positions[:, 1].min(), positions[:, 1].max()
+z_min, z_max = positions[:, 2].min(), positions[:, 2].max()
+print(f"X axis limits: {x_min} to {x_max}")
+print(f"Y axis limits: {y_min} to {y_max}")
+print(f"Z axis limits: {z_min} to {z_max}")
+
+# Annotate the limits on the plot
+ax.text2D(
+    0.05, 0.95, f"X axis limits: {x_min:.2f} to {x_max:.2f}", transform=ax.transAxes
+)
+ax.text2D(
+    0.05, 0.90, f"Y axis limits: {y_min:.2f} to {y_max:.2f}", transform=ax.transAxes
+)
+ax.text2D(
+    0.05, 0.85, f"Z axis limits: {z_min:.2f} to {z_max:.2f}", transform=ax.transAxes
+)
 
 plt.show()

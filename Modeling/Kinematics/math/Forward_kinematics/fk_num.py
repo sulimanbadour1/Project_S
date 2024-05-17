@@ -1,6 +1,7 @@
 import numpy as np
 from sympy import symbols, cos, sin, pi, Matrix, N
 import matplotlib.pyplot as plt
+import math
 
 
 # Define symbolic variables
@@ -36,8 +37,23 @@ def DH_matrix(theta, d, a, alpha):
     )
 
 
-# # Define joint angles in radians
-angles = {theta1: 0, theta2: 0, theta3: 0, theta4: 0, theta5: 0}
+# Joint angles in degrees
+theta_in_degrees = {
+    "theta1": 19.4,
+    "theta2": -45.79,
+    "theta3": -54.72,
+    "theta4": 280.51,
+    "theta5": 0,
+}
+
+print("Joint angles in degrees:\n")
+print(theta_in_degrees)
+
+# Convert angles to radians
+angles = {key: math.radians(value) for key, value in theta_in_degrees.items()}
+
+print("Joint angles in radians:\n")
+print(angles)
 
 # Compute transformation matrices
 T1 = DH_matrix(theta1, d1, a1, alpha1).subs(angles)
