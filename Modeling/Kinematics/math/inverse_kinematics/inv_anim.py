@@ -1,7 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, PillowWriter
 import numpy as np
 
 # Define DH parameters
@@ -31,30 +31,17 @@ def inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega):
     theta2_alt = alpha - beta
 
     # Calculate theta3
-
     theta3 = math.degrees(math.acos((S**2 - a2**2 - a3**2) / (2 * a2 * a3)))
-
-    # or
     theta3 = -theta3  # Adjust for proper direction
 
     # Calculate theta4
     theta234 = 90 - omega
-    # theta234_alt = 90 + omega
     theta4 = theta234 - theta2 - theta3
 
     return theta1, theta2, theta3, theta4
 
 
-def forward_kinematics(
-    d1,
-    a2,
-    a3,
-    d5,
-    theta1,
-    theta2,
-    theta3,
-    theta4,
-):
+def forward_kinematics(d1, a2, a3, d5, theta1, theta2, theta3, theta4):
     # Convert angles to radians
     theta1 = math.radians(theta1)
     theta2 = math.radians(theta2)
@@ -84,7 +71,7 @@ def forward_kinematics(
     return [(x0, y0, z0), (x1, y1, z1), (x2, y2, z2), (x3, y3, z3), (x4, y4, z4)]
 
 
-def plot_robot(ax, joint_positions):
+def plot_robot(ax, joint_positions, theta1, theta2, theta3, theta4, end_effector_pos):
     # Unpack joint positions
     x, y, z = zip(*joint_positions)
 
@@ -102,11 +89,26 @@ def plot_robot(ax, joint_positions):
             color="black",
         )
 
+    # Add text for joint angles
+    ax.text2D(0.05, 0.95, f"Theta1: {theta1:.2f}°", transform=ax.transAxes, color="red")
+    ax.text2D(0.05, 0.90, f"Theta2: {theta2:.2f}°", transform=ax.transAxes, color="red")
+    ax.text2D(0.05, 0.85, f"Theta3: {theta3:.2f}°", transform=ax.transAxes, color="red")
+    ax.text2D(0.05, 0.80, f"Theta4: {theta4:.2f}°", transform=ax.transAxes, color="red")
+
+    # Add text for end effector position
+    ax.text2D(
+        0.05,
+        0.75,
+        f"End Effector Position: ({end_effector_pos[0]:.2f}, {end_effector_pos[1]:.2f}, {end_effector_pos[2]:.2f})",
+        transform=ax.transAxes,
+        color="red",
+    )
+
 
 # Define the circular path parameters
-radius = 0.5
+radius = 0.8
 num_points = 100
-z_level = 0.8
+z_level = 0.4
 
 # Generate points on the circular path
 angles = np.linspace(0, 2 * np.pi, num_points)
@@ -154,10 +156,10 @@ def animate(i):
     ax.set_zlim([0, 1])
     theta1, theta2, theta3, theta4 = joint_angles[i]
     joint_positions = forward_kinematics(d1, a2, a3, d5, theta1, theta2, theta3, theta4)
-    plot_robot(ax, joint_positions)
+    end_effector_pos = joint_positions[-1]
+    plot_robot(ax, joint_positions, theta1, theta2, theta3, theta4, end_effector_pos)
 
     # Store the end effector position
-    end_effector_pos = joint_positions[-1]
     path_x.append(end_effector_pos[0])
     path_y.append(end_effector_pos[1])
     path_z.append(end_effector_pos[2])
@@ -169,6 +171,9 @@ def animate(i):
 
 # Create the animation
 ani = FuncAnimation(fig, animate, frames=num_points, init_func=init, blit=True)
+
+# Save the animation as a GIF
+ani.save("robot_animation.gif", writer=PillowWriter(fps=20))
 
 # Show the animation
 plt.show()
