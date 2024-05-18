@@ -1,6 +1,16 @@
 # Project_S (Camera control system for desktop 3d printers)
 
 
+## Content Tree
+```
+├───Camera_Path_Mapping_Algorithm 
+├───demos
+└───Modeling
+    ├───control_basics
+    └───Kinematics
+        ├───math
+```
+
 # 1- Develop Camera Path Mapping Algorithm
 
 ## Overview
@@ -98,8 +108,9 @@ import pybullet_data
 - `simulate_and_capture`: Runs the simulation, capturing joint states and end-effector positions.
 - `scale_timing.py`: used to give the user the ability to change only the simualtion time based on the slicer timing.
 
-### `Modeling\Kinematics\math` this folder contains modeling and simulations for FK, IK , Jacobians, torque etc:
+## `Modeling\Kinematics\math` this folder contains modeling and simulations for FK, IK , Jacobians, torque etc:
 
+```
 ├───math
 │   ├───both
 │   ├───Forward_kinematics
@@ -111,6 +122,7 @@ import pybullet_data
 └───urdfs `CAMbot in urdf format`
     └───backup
 └─── `pybullet.py` files to simulate the urdf files.
+```
 
 ### Modeling Demos
 | Robot EE Path  | PyBullet Simulation `Modeling\Kinematics\plot_CAMBOT.py` |
@@ -121,8 +133,12 @@ import pybullet_data
 |--------------------|
 | ![FK Demo](demos/robot_arm_animation_cycle.gif) |
 
-| Robot Work Space `Modeling\Kinematics\math\both\fk_workspace.py` | IK simulation `Modeling\Kinematics\math\Forward_kinematics\anim_fk.py` |
+| Robot Work Space `Modeling\Kinematics\math\both\fk_workspace.py` | IK simulation `Modeling\Kinematics\math\inverse_kinematics\inv_anim.py` |
 |--------------------|------------|
 | ![wS](demos/robot_ws.png) | ![Inverse Kinematics Demo](demos/robot_animation.gif) | 
+
+|Singularity map `Modeling\Kinematics\math\jacobians\singularity_map.py`|
+|--------------------|
+| ![Singularity maps Demo](demos\sing.png) |
 
 

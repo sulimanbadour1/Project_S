@@ -106,14 +106,14 @@ def update(frame):
     z_vals = [p[2] for p in positions]
 
     # Plot the robot arm
-    ax.plot(x_vals, y_vals, z_vals, "ro-")
+    ax.plot(x_vals, y_vals, z_vals, "ro-", label="Robot Arm")
 
     # Store and plot the end effector trace
     ee_positions.append(positions[-1])
     ee_trace_x = [p[0] for p in ee_positions]
     ee_trace_y = [p[1] for p in ee_positions]
     ee_trace_z = [p[2] for p in ee_positions]
-    ax.plot(ee_trace_x, ee_trace_y, ee_trace_z, "b--")
+    ax.plot(ee_trace_x, ee_trace_y, ee_trace_z, "b--", label="End Effector Trace")
 
     end_effector = positions[-1]
     ax.text(
@@ -125,12 +125,21 @@ def update(frame):
     )
     angle_texts = "\n".join(
         [
-            f"Theta{idx + 1}: {np.degrees(val):.2f}°"
+            f"{idx + 1}: {np.degrees(val):.2f}°"
             for idx, val in interpolated_angles.items()
         ]
     )
-    ax.text2D(0.05, 0.95, angle_texts, transform=ax.transAxes, color="black")
+    ax.text2D(
+        0.95,
+        0.95,
+        angle_texts,
+        transform=ax.transAxes,
+        color="black",
+        ha="right",
+        va="top",
+    )
     ax.set_title("Robot Arm Configuration")
+    ax.legend(loc="upper left")
 
 
 # Create animation
