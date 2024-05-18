@@ -1,18 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, PillowWriter
 from mpl_toolkits.mplot3d import Axes3D
 from sympy import symbols, cos, sin, pi, Matrix, N
 
 # Define symbolic variables
 theta1, theta2, theta3, theta4, theta5 = symbols("theta1 theta2 theta3 theta4 theta5")
-# DH Parameters
-# d1, a1, alpha1 = 0.1, 0, pi / 2
-# d2, a2, alpha2 = 0, 0.5, 0
-# d3, a3, alpha3 = 0, 0.5, 0
-# d4, a4, alpha4 = 0, 0, pi / 2
-# d5, a5, alpha5 = 0.1, 0, 0
-
 
 # DH Parameters
 d1, a1, alpha1 = 0.1, 0, pi / 2
@@ -48,7 +41,7 @@ def DH_matrix(theta, d, a, alpha):
 target_angles = {
     theta1: -pi,
     theta2: -pi / 6,
-    theta3: -pi / 6,
+    theta3: -pi / 2,
     theta4: -pi / 6,
     theta5: -pi / 6,
 }
@@ -59,6 +52,9 @@ ax = fig.add_subplot(111, projection="3d")
 ax.set_xlim([-1, 1])
 ax.set_ylim([-1, 1])
 ax.set_zlim([-0.5, 1])
+
+# Store end effector positions
+ee_positions = []
 
 
 # Animation update function
@@ -101,7 +97,16 @@ def update(frame):
     y_vals = [p[1] for p in positions]
     z_vals = [p[2] for p in positions]
 
+    # Plot the robot arm
     ax.plot(x_vals, y_vals, z_vals, "ro-")
+
+    # Store and plot the end effector trace
+    ee_positions.append(positions[-1])
+    ee_trace_x = [p[0] for p in ee_positions]
+    ee_trace_y = [p[1] for p in ee_positions]
+    ee_trace_z = [p[2] for p in ee_positions]
+    ax.plot(ee_trace_x, ee_trace_y, ee_trace_z, "b--")
+
     end_effector = positions[-1]
     ax.text(
         x_vals[-1],
@@ -112,7 +117,7 @@ def update(frame):
     )
     angle_texts = "\n".join(
         [
-            f"Theta{idx+1}: {np.degrees(val):.2f}°"
+            f"Theta{idx + 1}: {np.degrees(val):.2f}°"
             for idx, val in interpolated_angles.items()
         ]
     )
@@ -122,5 +127,8 @@ def update(frame):
 
 # Create animation
 ani = FuncAnimation(fig, update, frames=100, repeat=False)
+
+# Save the animation
+ani.save("robot_arm_animation.gif", writer=PillowWriter(fps=10))
 
 plt.show()

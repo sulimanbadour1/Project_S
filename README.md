@@ -109,6 +109,6 @@ import pybullet_data
 
 | Robot Work Space `work_space.py` | IK simulation `ik.py` |
 |--------------------|------------|
-| ![wS](https://github.com/sulimanbadour1/Project_S/blob/main/demos/ws.jpeg) | ![Inverse Kinematics Demo](demos/robot_animation.gif) | 
+| ![wS](demos/robot_ws.png) | ![Inverse Kinematics Demo](demos/robot_animation.gif) | 
 
 

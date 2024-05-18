@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # Define the ranges for the joint angles and link lengths
-theta_1_range = np.linspace(-np.pi, np.pi, 9)
-theta_2_range = np.linspace(-np.pi / 2, np.pi / 2, 9)
-theta_3_range = np.linspace(-np.pi / 2, np.pi / 2, 9)
-theta_4_range = np.linspace(-np.pi, np.pi, 9)
-theta_5_range = np.linspace(-np.pi, np.pi, 9)
+theta_1_range = np.linspace(-np.pi, np.pi, 15)
+theta_2_range = np.linspace(-np.pi / 2, np.pi / 2, 15)
+theta_3_range = np.linspace(-np.pi / 2, np.pi / 2, 15)
+theta_4_range = np.linspace(-np.pi, np.pi, 15)
+theta_5_range = np.linspace(-np.pi, np.pi, 15)
 d_1_value = 0.1  # Example value for d_1
 d_5_value = 0.1  # Example value for d_5
 a_2_value = 0.5  # Example value for a_2
