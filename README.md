@@ -139,6 +139,6 @@ import pybullet_data
 
 |Singularity map `Modeling\Kinematics\math\jacobians\singularity_map.py`|
 |--------------------|
-| ![Singularity maps Demo](demos\sing.png) |
+| ![Singularity maps Demo](demos/sing_map.png) |
 
 
