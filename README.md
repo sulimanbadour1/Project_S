@@ -3,12 +3,21 @@
 
 ## Content Tree
 ```
-├───Camera_Path_Mapping_Algorithm 
+├───Camera_Path_Mapping_Algorithm
+│   └───plotting
 ├───demos
 └───Modeling
     ├───control_basics
     └───Kinematics
         ├───math
+        │   ├───both
+        │   ├───Forward_kinematics
+        │   ├───inverse_kinematics
+        │   ├───jacobians
+        │   └───velocity_with_time
+        ├───plotting_archive
+        ├───sketches
+        └───urdfs
 ```
 
 # 1- Develop Camera Path Mapping Algorithm
