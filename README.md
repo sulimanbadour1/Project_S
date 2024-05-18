@@ -98,16 +98,30 @@ import pybullet_data
 - `simulate_and_capture`: Runs the simulation, capturing joint states and end-effector positions.
 - `scale_timing.py`: used to give the user the ability to change only the simualtion time based on the slicer timing.
 
+### `Modeling\Kinematics\math` this folder contains modeling and simulations for FK, IK , Jacobians, torque etc:
 
+├───math
+│   ├───both
+│   ├───Forward_kinematics
+│   ├───inverse_kinematics
+│   ├───jacobians
+│   └───velocity_with_time
+├───plotting_archive `archive for plotting files`
+├───sketches
+└───urdfs `CAMbot in urdf format`
+    └───backup
+└─── `pybullet.py` files to simulate the urdf files.
 
-### Demos for the control 
-| Robot EE Path  | PyBullet Simulation `plot_CAMBOT.py` |
+### Modeling Demos
+| Robot EE Path  | PyBullet Simulation `Modeling\Kinematics\plot_CAMBOT.py` |
 |--------------------|------------|
 | ![EE](https://github.com/sulimanbadour1/Project_S/blob/main/demos/ee.jpeg?raw=true) | ![PyBullet Demo](demos/control2.PNG) | 
 
+|Forward Kinematics simulations `Modeling\Kinematics\math\Forward_kinematics\anim_fk.py`|
+|--------------------|
+| ![FK Demo](demos/robot_arm_animation_cycle.gif) |
 
-
-| Robot Work Space `work_space.py` | IK simulation `ik.py` |
+| Robot Work Space `Modeling\Kinematics\math\both\fk_workspace.py` | IK simulation `Modeling\Kinematics\math\Forward_kinematics\anim_fk.py` |
 |--------------------|------------|
 | ![wS](demos/robot_ws.png) | ![Inverse Kinematics Demo](demos/robot_animation.gif) | 
 

@@ -64,10 +64,18 @@ def update(frame):
     ax.set_ylim([-1, 1])
     ax.set_zlim([-0.5, 1])
 
-    # Interpolate between 0 and the target angle based on the current frame
-    interpolated_angles = {
-        theta: float(frame * target / 100) for theta, target in target_angles.items()
-    }
+    if frame <= 100:
+        # Interpolate between 0 and the target angle based on the current frame
+        interpolated_angles = {
+            theta: float(frame * target / 100)
+            for theta, target in target_angles.items()
+        }
+    else:
+        # Interpolate between the target angle and 0 based on the current frame
+        interpolated_angles = {
+            theta: float((200 - frame) * target / 100)
+            for theta, target in target_angles.items()
+        }
 
     T1 = DH_matrix(interpolated_angles[theta1], d1, a1, alpha1)
     T2 = DH_matrix(interpolated_angles[theta2], d2, a2, alpha2)
@@ -126,9 +134,9 @@ def update(frame):
 
 
 # Create animation
-ani = FuncAnimation(fig, update, frames=100, repeat=False)
+ani = FuncAnimation(fig, update, frames=200, repeat=False)
 
 # Save the animation
-ani.save("robot_arm_animation.gif", writer=PillowWriter(fps=10))
+ani.save("robot_arm_animation_cycle.gif", writer=PillowWriter(fps=10))
 
 plt.show()
