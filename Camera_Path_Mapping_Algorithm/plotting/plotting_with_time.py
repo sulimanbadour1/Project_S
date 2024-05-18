@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
 # Load the data
-data = np.loadtxt("resTime.txt")
+data = np.loadtxt("Camera_Path_Mapping_Algorithm\plotting/resTime.txt")
 
 # Split the data into x, y, z, and time
 x = data[:, 0]

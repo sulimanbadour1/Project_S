@@ -46,7 +46,9 @@ def plot_3d_points(points):
 
 
 # Read points from file
-points = read_points_from_file("camera_points.txt")
+points = read_points_from_file(
+    "Camera_Path_Mapping_Algorithm/plotting/camera_points.txt"
+)
 
 # Plot the points
 plot_3d_points(points)
