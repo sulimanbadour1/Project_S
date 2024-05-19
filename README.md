@@ -151,3 +151,4 @@ import pybullet_data
 | ![Singularity maps Demo](demos/sing_map.png) |
 
 
+# Torque analysis
