@@ -3,7 +3,17 @@ import sympy as sp
 
 # Define the computation function
 def compute_torques(
-    d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
+    d_1_val,
+    d_5_val,
+    a_2_val,
+    a_3_val,
+    masses,
+    inertias,
+    angles,
+    mass_camera,
+    mass_lights,
+    external_forces,
+    external_torques,
 ):
     # Define symbolic variables for joint angles, DH parameters, masses, and inertia
     theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
@@ -72,6 +82,13 @@ def compute_torques(
     p4 = T4[:3, 3] / 2
     p5 = T5[:3, 3] / 2
 
+    # # Debug prints to ensure positions are correct
+    # print("p1:", p1)
+    # print("p2:", p2)
+    # print("p3:", p3)
+    # print("p4:", p4)
+    # print("p5:", p5)
+
     # Compute the Jacobians for each center of mass
     Jv1 = p1.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv2 = p2.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
@@ -79,12 +96,21 @@ def compute_torques(
     Jv4 = p4.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv5 = p5.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
 
+    # Debug prints to ensure Jacobians are correct
+    # print("Jv1:", Jv1)
+    # print("Jv2:", Jv2)
+    # print("Jv3:", Jv3)
+    # print("Jv4:", Jv4)
+    # print("Jv5:", Jv5)
+
     # Compute the gravity vector for each link (assuming center of mass at the link origin)
     G1 = m1 * g
     G2 = m2 * g
     G3 = m3 * g
     G4 = m4 * g
-    G5 = m5 * g
+    G5 = (
+        m5 + mass_camera + mass_lights
+    ) * g  # Adding camera and lights masses to the last link
 
     # Compute the torques due to gravity for each link
     tau_g1 = Jv1.T * G1
@@ -93,49 +119,61 @@ def compute_torques(
     tau_g4 = Jv4.T * G4
     tau_g5 = Jv5.T * G5
 
-    # Sum the torques due to gravity
-    tau_g = tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5
+    # # Debug prints for torques due to gravity
+    # print("Torque due to gravity (unsimplified) - Link 1:")
+    # sp.pprint(tau_g1)
+    # print("Torque due to gravity (unsimplified) - Link 2:")
+    # sp.pprint(tau_g2)
+    # print("Torque due to gravity (unsimplified) - Link 3:")
+    # sp.pprint(tau_g3)
+    # print("Torque due to gravity (unsimplified) - Link 4:")
+    # sp.pprint(tau_g4)
+    # print("Torque due to gravity (unsimplified) - Link 5:")
+    # sp.pprint(tau_g5)
 
     # Define symbolic variables for external forces and torques
-    Fx, Fy, Fz, Mx, My, Mz = sp.symbols("Fx Fy Fz Mx My Mz")
-    F_ext = sp.Matrix([Fx, Fy, Fz, Mx, My, Mz])
+    F_ext_x, F_ext_y, F_ext_z = sp.symbols("F_ext_x F_ext_y F_ext_z")
+    T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5 = sp.symbols(
+        "T_ext_1 T_ext_2 T_ext_3 T_ext_4 T_ext_5"
+    )
+    F_ext = sp.Matrix([F_ext_x, F_ext_y, F_ext_z])
+    T_ext = sp.Matrix([T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5])
 
-    # Compute the Jacobian for the end effector position
-    O5 = T5[:3, 3]
-    Jv_ee = O5.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
+    # Compute the Jacobian for the external force application point (assuming it is the end effector)
+    Jv_ext = T5[:3, 3].jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
 
-    # Compute the rotational Jacobians
-    z0 = sp.Matrix([0, 0, 1])
-    z1 = A1[:3, :3] * z0
-    z2 = (A1 * A2)[:3, :3] * z0
-    z3 = (A1 * A2 * A3)[:3, :3] * z0
-    z4 = (A1 * A2 * A3 * A4)[:3, :3] * z0
+    # Compute the torques due to external forces and torques
+    tau_ext_forces = Jv_ext.T * F_ext
+    tau_ext = tau_ext_forces + T_ext
 
-    Jw = sp.Matrix.hstack(z0, z1, z2, z3, z4)
+    # Debug print for torques due to external forces and torques
+    print("Torque due to external forces and torques (unsimplified):")
+    sp.pprint(tau_ext)
 
-    # Combine the translational and rotational Jacobians
-    J_full = sp.Matrix.vstack(Jv_ee, Jw)
-
-    # Compute the torques due to external forces
-    tau_ext = J_full.T * F_ext
-
-    # Sum the gravitational and external torques
-    tau_total = tau_g - tau_ext
+    # Sum the torques due to gravity and external forces/torques
+    tau_total = tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5 + tau_ext
 
     # Initialize pretty printing for better output readability
     sp.init_printing(use_unicode=True)
 
-    # Display symbolic torques due to gravity
-    print("Symbolic Torques due to Gravity:")
-    sp.pprint(tau_g)
-
-    # Display symbolic torques due to external forces
-    print("\nSymbolic Torques due to External Forces:")
-    sp.pprint(tau_ext)
-
-    # Display symbolic total torques
-    print("\nSymbolic Total Torques:")
+    # Print the total torques without simplification for debugging
+    print("Total Torque (unsimplified):")
     sp.pprint(tau_total)
+
+    # Try simplifying the total torques
+    try:
+        tau_total_simplified = tau_total.simplify()
+        print("Total Torque (simplified):")
+        sp.pprint(tau_total_simplified)
+    except Exception as e:
+        print(f"Simplification failed: {e}")
+        print("Using unsimplified torques.")
+        tau_total_simplified = tau_total
+
+    # Check if simplification produced a valid result
+    if tau_total_simplified is None:
+        print("Simplification resulted in None. Using unsimplified torques.")
+        tau_total_simplified = tau_total
 
     # Provide numerical values for testing
     values = {
@@ -168,17 +206,19 @@ def compute_torques(
         theta_3: angles[2],
         theta_4: angles[3],
         theta_5: angles[4],
-        Fx: external_forces[0],
-        Fy: external_forces[1],
-        Fz: external_forces[2],
-        Mx: external_forces[3],
-        My: external_forces[4],
-        Mz: external_forces[5],
+        F_ext_x: external_forces[0],
+        F_ext_y: external_forces[1],
+        F_ext_z: external_forces[2],
+        T_ext_1: external_torques[0],
+        T_ext_2: external_torques[1],
+        T_ext_3: external_torques[2],
+        T_ext_4: external_torques[3],
+        T_ext_5: external_torques[4],
     }
 
-    # Compute numerical torques
-    numerical_torques = tau_total.subs(values)
-    print("\nNumerical Torques:")
+    # Compute numerical torques due to gravity and external forces/torques
+    numerical_torques = tau_total_simplified.subs(values)
+    print("\nNumerical Total Torques:")
     sp.pprint(numerical_torques)
 
 
@@ -196,15 +236,21 @@ inertias = [
     [0.1, 0.1, 0.1],
 ]
 angles = [0, 0, 0, 0, 0]
-external_forces = [0, 0, 0, 0, 0, 0]
+mass_camera = 0.5
+mass_lights = 0.5
+external_forces = [0, 0, 0]  # No external forces in this example
+external_torques = [0, 0, 0, 0, 0]  # No external torques in this example
 
 compute_torques(
-    d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
-)
-
-# Experiment with another set of values
-angles = [30, 45, 60, 90, 120]
-external_forces = [10, 0, 0, 0, 0, 0]
-compute_torques(
-    d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
+    d_1_val,
+    d_5_val,
+    a_2_val,
+    a_3_val,
+    masses,
+    inertias,
+    angles,
+    mass_camera,
+    mass_lights,
+    external_forces,
+    external_torques,
 )
