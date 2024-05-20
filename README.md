@@ -157,6 +157,6 @@ import pybullet_data
 - `Modeling\Kinematics\math\torque\high_path_traj.py` for specdific trajectory between point 1 ~ 2.
 - `Modeling\Kinematics\math\torque\tor_symbolic.py` logs the dynamics of the robot.
 
-|Torque analysis `Modeling\Kinematics\math\torque\tor_anim.py`||Torque Values `Modeling\Kinematics\math\torque\tor_anim.py`|
+|Torque analysis `Modeling\Kinematics\math\torque\tor_anim.py`|Torque Values `Modeling\Kinematics\math\torque\tor_anim.py`|
 |--------------------|--------------------|
 | ![Torque analysis](demos/robot_arm_animation_cycle_with_torques.gif) | ![Torque analysis](demos/tor.PNG) |
