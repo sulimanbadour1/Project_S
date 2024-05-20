@@ -151,4 +151,12 @@ import pybullet_data
 | ![Singularity maps Demo](demos/sing_map.png) |
 
 
-# Torque analysis
+# Torque analysis `Modeling\Kinematics\math\torque`
+- It allows us to determine the joint torques required to achieve desired motions or to hold a position under external forces. This analysis is fundamental for ensuring that the robot operates within its mechanical limits and achieves accurate and efficient movement.
+- `Modeling\Kinematics\math\torque\torques_max.py` logs the max values for the torques.
+- `Modeling\Kinematics\math\torque\high_path_traj.py` for specdific trajectory between point 1 ~ 2.
+- `Modeling\Kinematics\math\torque\tor_symbolic.py` logs the dynamics of the robot.
+
+|Torque analysis `Modeling\Kinematics\math\torque\tor_anim.py`||Torque Values `Modeling\Kinematics\math\torque\tor_anim.py`|
+|--------------------|--------------------|
+| ![Torque analysis](demos/robot_arm_animation_cycle_with_torques.gif) | ![Torque analysis](demos/tor.PNG) |

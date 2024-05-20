@@ -311,6 +311,22 @@ def update(frame):
     numerical_torques = [float(torque) for torque in numerical_torques]
     torques_over_time.append((numerical_torques, interpolated_angles, positions[-1]))
 
+    torque_texts = "\n".join(
+        [
+            f"Torque {i + 1}: {torque:.2f} Nm"
+            for i, torque in enumerate(numerical_torques)
+        ]
+    )
+    ax.text2D(
+        0.05,
+        0.95,
+        torque_texts,
+        transform=ax.transAxes,
+        color="red",
+        ha="left",
+        va="top",
+    )
+
 
 # Create animation
 ani = FuncAnimation(fig, update, frames=200, repeat=False)
