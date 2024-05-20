@@ -93,18 +93,6 @@ def compute_torques(
     tau_g4 = Jv4.T * G4
     tau_g5 = Jv5.T * G5
 
-    # Print the torques due to gravity for each link without simplification for debugging
-    print("Torque due to gravity (unsimplified) - Link 1:")
-    sp.pprint(tau_g1)
-    print("Torque due to gravity (unsimplified) - Link 2:")
-    sp.pprint(tau_g2)
-    print("Torque due to gravity (unsimplified) - Link 3:")
-    sp.pprint(tau_g3)
-    print("Torque due to gravity (unsimplified) - Link 4:")
-    sp.pprint(tau_g4)
-    print("Torque due to gravity (unsimplified) - Link 5:")
-    sp.pprint(tau_g5)
-
     # Sum the torques due to gravity
     tau_g = tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5
 
@@ -136,6 +124,18 @@ def compute_torques(
 
     # Initialize pretty printing for better output readability
     sp.init_printing(use_unicode=True)
+
+    # Display symbolic torques due to gravity
+    print("Symbolic Torques due to Gravity:")
+    sp.pprint(tau_g)
+
+    # Display symbolic torques due to external forces
+    print("\nSymbolic Torques due to External Forces:")
+    sp.pprint(tau_ext)
+
+    # Display symbolic total torques
+    print("\nSymbolic Total Torques:")
+    sp.pprint(tau_total)
 
     # Provide numerical values for testing
     values = {
@@ -202,9 +202,9 @@ compute_torques(
     d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
 )
 
-# # Experiment with another set of values
-# angles = [30, 45, 60, 90, 120]
-# external_forces = [10, 0, 0, 0, 0, 0]
-# compute_torques(
-#     d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
-# )
+# Experiment with another set of values
+angles = [30, 45, 60, 90, 120]
+external_forces = [10, 0, 0, 0, 0, 0]
+compute_torques(
+    d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
+)

@@ -237,18 +237,31 @@ for theta_1_val, theta_2_val, theta_3_val, theta_4_val, theta_5_val in zip(
             min_torques[i + 1] = numerical_torques[i]
             min_torque_angles[i + 1] = angles
 
-# Compute the total required torque (sum of absolute max and min torques)
-total_torques = {i: abs(max_torques[i]) + abs(min_torques[i]) for i in range(1, 6)}
+# Compute the total required torque (max of absolute max and min torques)
+total_torques = {i: max(abs(max_torques[i]), abs(min_torques[i])) for i in range(1, 6)}
 
 # Plot the maximum torques for each joint
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(12, 8))
 joints = range(1, 6)
+max_torque_values = [max_torques[joint] for joint in joints]
+min_torque_values = [min_torques[joint] for joint in joints]
 total_torque_values = [total_torques[joint] for joint in joints]
-plt.plot(joints, total_torque_values, marker="o")
+
+plt.plot(joints, max_torque_values, marker="o", label="Max Torque")
+plt.plot(joints, min_torque_values, marker="o", label="Min Torque")
+plt.plot(
+    joints,
+    total_torque_values,
+    marker="o",
+    label="Total Required Torque",
+    linestyle="--",
+)
+
 plt.xlabel("Joint")
-plt.ylabel("Total Torque (Nm)")
-plt.title("Total Joint Torques in Equilibrium")
+plt.ylabel("Torque (Nm)")
+plt.title("Joint Torques in Equilibrium")
 plt.xticks(joints)
+plt.legend()
 plt.grid(True)
 plt.show()
 
