@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 
 
 # Define the computation function
-def compute_torques(
-    d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
-):
+def compute_symbolic_torques():
     # Define symbolic variables for joint angles, DH parameters, masses, and inertia
     theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
         "theta_1 theta_2 theta_3 theta_4 theta_5"
@@ -29,14 +27,6 @@ def compute_torques(
     I3 = sp.diag(I3_xx, I3_yy, I3_zz)
     I4 = sp.diag(I4_xx, I4_yy, I4_zz)
     I5 = sp.diag(I5_xx, I5_yy, I5_zz)
-
-    # Define joint velocities and accelerations
-    theta_dot_1, theta_dot_2, theta_dot_3, theta_dot_4, theta_dot_5 = sp.symbols(
-        "theta_dot_1 theta_dot_2 theta_dot_3 theta_dot_4 theta_dot_5"
-    )
-    theta_ddot_1, theta_ddot_2, theta_ddot_3, theta_ddot_4, theta_ddot_5 = sp.symbols(
-        "theta_ddot_1 theta_ddot_2 theta_ddot_3 theta_ddot_4 theta_ddot_5"
-    )
 
     # Helper function to create a transformation matrix from DH parameters
     def dh_matrix(theta, d, a, alpha):
@@ -106,8 +96,8 @@ def compute_torques(
     # Sum the torques due to gravity
     tau_g = tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5
 
-    # Forces and moments vector at the end effector
-    Fx, Fy, Fz, Mx, My, Mz = external_forces
+    # Define external forces and moments
+    Fx, Fy, Fz, Mx, My, Mz = sp.symbols("Fx Fy Fz Mx My Mz")
     F_ext = sp.Matrix([Fx, Fy, Fz, Mx, My, Mz])
 
     # Jacobian for the end effector
@@ -133,54 +123,42 @@ def compute_torques(
     # Total torque in equilibrium (gravitational + external)
     tau_total = tau_g - tau_ext
 
-    # Initialize pretty printing for better output readability
+    # Print symbolic torques
     sp.init_printing(use_unicode=True)
+    print("Symbolic Total Joint Torques in Equilibrium:")
+    sp.pprint(tau_total)
 
-    # Provide numerical values for testing
-    values = {
-        d_1: d_1_val,
-        d_5: d_5_val,
-        a_2: a_2_val,
-        a_3: a_3_val,
-        m1: masses[0],
-        m2: masses[1],
-        m3: masses[2],
-        m4: masses[3],
-        m5: masses[4],
-        I1_xx: inertias[0][0],
-        I1_yy: inertias[0][1],
-        I1_zz: inertias[0][2],
-        I2_xx: inertias[1][0],
-        I2_yy: inertias[1][1],
-        I2_zz: inertias[1][2],
-        I3_xx: inertias[2][0],
-        I3_yy: inertias[2][1],
-        I3_zz: inertias[2][2],
-        I4_xx: inertias[3][0],
-        I4_yy: inertias[3][1],
-        I4_zz: inertias[3][2],
-        I5_xx: inertias[4][0],
-        I5_yy: inertias[4][1],
-        I5_zz: inertias[4][2],
-        theta_1: angles[0],
-        theta_2: angles[1],
-        theta_3: angles[2],
-        theta_4: angles[3],
-        theta_5: angles[4],
-        Fx: external_forces[0],
-        Fy: external_forces[1],
-        Fz: external_forces[2],
-        Mx: external_forces[3],
-        My: external_forces[4],
-        Mz: external_forces[5],
-    }
+    return tau_total, [
+        theta_1,
+        theta_2,
+        theta_3,
+        theta_4,
+        theta_5,
+        d_1,
+        d_5,
+        a_2,
+        a_3,
+        m1,
+        m2,
+        m3,
+        m4,
+        m5,
+        Fx,
+        Fy,
+        Fz,
+        Mx,
+        My,
+        Mz,
+    ]
 
-    # Compute numerical torques due to gravity
+
+def compute_numerical_torques(tau_total, symbols, values):
+    # Compute numerical torques
     numerical_torques = tau_total.subs(values)
     return numerical_torques
 
 
-# Experiment with different values
+# Define parameters for the robot
 d_1_val = 0.1
 d_5_val = 0.1
 a_2_val = 0.5
@@ -193,32 +171,73 @@ inertias = [
     [0.1, 0.1, 0.1],
     [0.1, 0.1, 0.1],
 ]
+# Add mass for camera and lights at the end effector
+mass_camera = 0.5
+mass_lights = 0.5
+masses[-1] += mass_camera + mass_lights  # Add to the last mass (end effector)
+
 external_forces = [0, 0, 0, 0, 0, 0]  # No external forces/moments
 
-# Angles to evaluate (range for theta_2)
-angles_range = np.linspace(0, 120, 100)
-angles_fixed = [0, 0, 0, 0]  # Fixed angles for other joints
-torques_all = {i: [] for i in range(1, 6)}  # To store torques for each joint
+# Compute symbolic torques
+tau_total, symbols = compute_symbolic_torques()
 
-# Compute torques for a range of angles for theta_2
-for theta_2_val in angles_range:
-    angles = [0, theta_2_val, 0, 0, 0]
-    numerical_torques = compute_torques(
-        d_1_val, d_5_val, a_2_val, a_3_val, masses, inertias, angles, external_forces
-    )
-    numerical_torques = [float(torque) for torque in numerical_torques]
+# Define the start and end joint configurations (angles in degrees)
+start_angles = [0, 0, 0, 0, 0]
+end_angles = [0.0, -60.0, 0.0, 90.0, 0.0]
 
-    for i in range(5):
-        torques_all[i + 1].append(numerical_torques[i])
+# Define the number of steps for interpolation
+num_steps = 360
 
-# Plot the torques
+# Interpolate the joint angles
+trajectory = np.linspace(start_angles, end_angles, num_steps)
+
+# Compute torques for each step in the trajectory
+torques_trajectory = []
+
+for angles in trajectory:
+    values = {
+        symbols[0]: angles[0],
+        symbols[1]: angles[1],
+        symbols[2]: angles[2],
+        symbols[3]: angles[3],
+        symbols[4]: angles[4],
+        symbols[5]: d_1_val,
+        symbols[6]: d_5_val,
+        symbols[7]: a_2_val,
+        symbols[8]: a_3_val,
+        symbols[9]: masses[0],
+        symbols[10]: masses[1],
+        symbols[11]: masses[2],
+        symbols[12]: masses[3],
+        symbols[13]: masses[4],
+        symbols[14]: external_forces[0],
+        symbols[15]: external_forces[1],
+        symbols[16]: external_forces[2],
+        symbols[17]: external_forces[3],
+        symbols[18]: external_forces[4],
+        symbols[19]: external_forces[5],
+    }
+    numerical_torques = compute_numerical_torques(tau_total, symbols, values)
+    torques_trajectory.append([float(torque) for torque in numerical_torques])
+
+# Convert torques_trajectory to a NumPy array for easier plotting
+torques_trajectory = np.array(torques_trajectory)
+
+# Plot the torques for each joint over the trajectory
 plt.figure(figsize=(12, 8))
-for joint, torques in torques_all.items():
-    plt.plot(angles_range, torques, label=f"Joint {joint}")
+for joint in range(1, 6):
+    plt.plot(torques_trajectory[:, joint - 1], label=f"Joint {joint}")
 
-plt.xlabel("Theta 2 (degrees)")
+plt.xlabel("Trajectory Step")
 plt.ylabel("Torque (Nm)")
-plt.title("Total Joint Torques in Equilibrium for Varying Theta 2")
+plt.title("Joint Torques from Point 1 to Point 2")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# Print the torques for each joint at the start and end points
+print("Torques at the start point (Point 1):")
+print(torques_trajectory[0])
+
+print("\nTorques at the end point (Point 2):")
+print(torques_trajectory[-1])
