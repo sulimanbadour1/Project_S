@@ -136,6 +136,7 @@ def compute_torques(
     T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5 = sp.symbols(
         "T_ext_1 T_ext_2 T_ext_3 T_ext_4 T_ext_5"
     )
+
     F_ext = sp.Matrix([F_ext_x, F_ext_y, F_ext_z])
     T_ext = sp.Matrix([T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5])
 
