@@ -14,10 +14,13 @@
         │   ├───Forward_kinematics
         │   ├───inverse_kinematics
         │   ├───jacobians
-        │   └───velocity_with_time
+        │   ├───torque
+        │   ├───velocity_with_time
+        │   └───vel_tor_acc
         ├───plotting_archive
         ├───sketches
         └───urdfs
+            └───backup
 ```
 
 # 1- Develop Camera Path Mapping Algorithm
