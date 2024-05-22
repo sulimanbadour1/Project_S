@@ -204,6 +204,7 @@ ax.set_zlim([-0.5, 1])
 # Store end effector positions and torques
 ee_positions = []
 torques_over_time = []
+angles_over_time = []
 
 
 # Animation update function
@@ -282,7 +283,7 @@ def update(frame):
         va="top",
     )
     ax.set_title("Robot Arm Configuration")
-    ax.legend(loc="upper left")
+    ax.legend(loc="lower left")
 
     # Compute torques
     values = {
@@ -310,6 +311,7 @@ def update(frame):
     numerical_torques = compute_numerical_torques(tau_total, symbols, values)
     numerical_torques = [float(torque) for torque in numerical_torques]
     torques_over_time.append((numerical_torques, interpolated_angles, positions[-1]))
+    angles_over_time.append(interpolated_angles)
 
     torque_texts = "\n".join(
         [
@@ -366,6 +368,16 @@ with open("torques_data.txt", "w") as file:
             f"{frame}\t{', '.join(torque_values)}\t{', '.join(angle_values)}\t{', '.join(position_values)}\n"
         )
 
+# Compute joint velocities and accelerations
+angles_array = np.array(
+    [
+        [angle[theta] for theta in [theta1, theta2, theta3, theta4, theta5]]
+        for angle in angles_over_time
+    ]
+)
+velocities = np.gradient(angles_array, axis=0)
+accelerations = np.gradient(velocities, axis=0)
+
 # Plot the torques over time for each joint
 plt.figure(figsize=(10, 6))
 for i in range(5):
@@ -373,6 +385,28 @@ for i in range(5):
 plt.xlabel("Frame")
 plt.ylabel("Torque (Nm)")
 plt.title("Joint Torques Over Time")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plot the joint velocities over time
+plt.figure(figsize=(10, 6))
+for i in range(5):
+    plt.plot(velocities[:, i], label=f"Joint {i+1} Velocity")
+plt.xlabel("Frame")
+plt.ylabel("Velocity (rad/s)")
+plt.title("Joint Velocities Over Time")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plot the joint accelerations over time
+plt.figure(figsize=(10, 6))
+for i in range(5):
+    plt.plot(accelerations[:, i], label=f"Joint {i+1} Acceleration")
+plt.xlabel("Frame")
+plt.ylabel("Acceleration (rad/s^2)")
+plt.title("Joint Accelerations Over Time")
 plt.legend()
 plt.grid(True)
 plt.show()
