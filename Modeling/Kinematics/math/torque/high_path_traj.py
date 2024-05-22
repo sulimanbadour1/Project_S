@@ -183,7 +183,8 @@ tau_total, symbols = compute_symbolic_torques()
 
 # Define the start and end joint configurations (angles in degrees)
 start_angles = [0, 0, 0, 0, 0]
-end_angles = [0.0, -60.0, 0.0, 90.0, 0.0]
+end_angles = [350.0, -90.0, -90.0, -90.0, 0.0]
+
 
 # Define the number of steps for interpolation
 num_steps = 360

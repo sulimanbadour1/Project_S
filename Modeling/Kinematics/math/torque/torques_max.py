@@ -1,8 +1,6 @@
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from mpl_toolkits.mplot3d import Axes3D
 
 
 # Define the computation function
@@ -54,6 +52,7 @@ def compute_symbolic_torques():
     T5 = T4 * A5
 
     # Extract positions of each link's center of mass
+    # Assume center of mass at the middle of each link for simplicity
     p1 = T1[:3, 3] / 2
     p2 = T2[:3, 3] / 2
     p3 = T3[:3, 3] / 2
@@ -67,7 +66,7 @@ def compute_symbolic_torques():
     Jv4 = p4.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv5 = p5.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
 
-    # Compute the gravity vector for each link
+    # Compute the gravity vector for each link (assuming center of mass at the link origin)
     G1 = m1 * g
     G2 = m2 * g
     G3 = m3 * g
@@ -111,6 +110,11 @@ def compute_symbolic_torques():
     # Total torque in equilibrium (gravitational + external)
     tau_total = tau_g - tau_ext
 
+    # Print symbolic torques
+    sp.init_printing(use_unicode=True)
+    print("Symbolic Total Joint Torques in Equilibrium:")
+    sp.pprint(tau_total)
+
     return tau_total, [
         theta_1,
         theta_2,
@@ -147,10 +151,17 @@ d_5_val = 0.1
 a_2_val = 0.5
 a_3_val = 0.5
 masses = [1.0, 1.0, 1.0, 1.0, 1.0]
+inertias = [
+    [0.1, 0.1, 0.1],
+    [0.1, 0.1, 0.1],
+    [0.1, 0.1, 0.1],
+    [0.1, 0.1, 0.1],
+    [0.1, 0.1, 0.1],
+]
 # Add mass for camera and lights at the end effector
-mass_camera = 0.5
-mass_lights = 0.5
-masses[-1] += mass_camera + mass_lights
+mass_camera = 0
+mass_lights = 0
+masses[-1] += mass_camera + mass_lights  # Add to the last mass (end effector)
 
 external_forces = [0, 0, 0, 0, 0, 0]  # No external forces/moments
 
@@ -191,6 +202,7 @@ min_torque_angles = {i: None for i in range(1, 6)}  # To store angles for min to
 for theta_1_val, theta_2_val, theta_3_val, theta_4_val, theta_5_val in zip(
     theta_1_vals, theta_2_vals, theta_3_vals, theta_4_vals, theta_5_vals
 ):
+
     angles = [theta_1_val, theta_2_val, theta_3_val, theta_4_val, theta_5_val]
     values = {
         symbols[0]: angles[0],
@@ -261,114 +273,3 @@ for joint in range(1, 6):
         f"Min {min_torques[joint]:.2f} Nm at angles {min_torque_angles[joint]}"
     )
     print(f"Total required torque for Joint {joint}: {total_torques[joint]:.2f} Nm")
-
-
-# Function to compute the transformation matrices for given joint angles
-def compute_transformation_matrices(
-    theta_1, theta_2, theta_3, theta_4, theta_5
-):  # Helper function to create a transformation matrix from DH parameters
-    def dh_matrix(theta, d, a, alpha):
-        alpha_rad = sp.rad(alpha)
-        return sp.Matrix(
-            [
-                [
-                    sp.cos(theta),
-                    -sp.sin(theta) * sp.cos(alpha_rad),
-                    sp.sin(theta) * sp.sin(alpha_rad),
-                    a * sp.cos(theta),
-                ],
-                [
-                    sp.sin(theta),
-                    sp.cos(theta) * sp.cos(alpha_rad),
-                    -sp.cos(theta) * sp.sin(alpha_rad),
-                    a * sp.sin(theta),
-                ],
-                [0, sp.sin(alpha_rad), sp.cos(alpha_rad), d],
-                [0, 0, 0, 1],
-            ]
-        )
-
-    alpha = [90, 0, 0, 90, 0]
-    A1 = dh_matrix(theta_1, d_1_val, 0, alpha[0])
-    A2 = dh_matrix(theta_2, 0, a_2_val, alpha[1])
-    A3 = dh_matrix(theta_3, 0, a_3_val, alpha[2])
-    A4 = dh_matrix(theta_4, 0, 0, alpha[3])
-    A5 = dh_matrix(theta_5, d_5_val, 0, alpha[4])
-
-    T1 = A1
-    T2 = T1 * A2
-    T3 = T2 * A3
-    T4 = T3 * A4
-    T5 = T4 * A5
-
-    return [T1, T2, T3, T4, T5]
-
-
-# Convert max and min torque angles to numerical values
-max_torque_angles_num = [
-    [float(angle) for angle in max_torque_angles[joint]] for joint in range(1, 6)
-]
-min_torque_angles_num = [
-    [float(angle) for angle in min_torque_angles[joint]] for joint in range(1, 6)
-]
-
-
-# Function to animate the robot movement for maximum and minimum torque configurations
-def animate_robot_movement(start_angles, max_angles, min_angles):
-    fig, axs = plt.subplots(1, 2, figsize=(15, 8), subplot_kw={"projection": "3d"})
-    titles = ["Maximum Torque Configuration", "Minimum Torque Configuration"]
-
-    for ax, end_angles, title in zip(axs, [max_angles, min_angles], titles):
-        ax.set_xlim([-1, 1])
-        ax.set_ylim([-1, 1])
-        ax.set_zlim([0, 1.5])
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
-        ax.set_title(title)
-
-    # Define the number of frames for the animation
-    frames = 100
-
-    # Create a line object for each link in both subplots
-    lines = [[ax.plot([], [], [], marker="o")[0] for _ in range(5)] for ax in axs]
-
-    # Initialize function for the animation
-    def init():
-        for line_set in lines:
-            for line in line_set:
-                line.set_data([], [])
-                line.set_3d_properties([])
-        return [line for line_set in lines for line in line_set]
-
-    # Update function for the animation
-    def update(frame):
-        t = frame / (frames - 1)
-        for ax, end_angles, line_set in zip(axs, [max_angles, min_angles], lines):
-            current_angles = [
-                (1 - t) * start_angle + t * end_angle
-                for start_angle, end_angle in zip(start_angles, end_angles)
-            ]
-            Ts = compute_transformation_matrices(*current_angles)
-
-            points = [[0, 0, 0]] + [T[:3, 3].evalf() for T in Ts]
-            xs, ys, zs = zip(*points)
-
-            for i, line in enumerate(line_set):
-                line.set_data(xs[i : i + 2], ys[i : i + 2])
-                line.set_3d_properties(zs[i : i + 2])
-
-        return [line for line_set in lines for line in line_set]
-
-    ani = animation.FuncAnimation(fig, update, frames=frames, init_func=init, blit=True)
-
-    plt.show()
-
-
-# Maximum and minimum torque angles
-max_torque_angles_num = [max_torque_angles[joint] for joint in range(1, 6)]
-min_torque_angles_num = [min_torque_angles[joint] for joint in range(1, 6)]
-start_angles = [0, 0, 0, 0, 0]
-
-# Animate robot movement for both maximum and minimum torque configurations
-animate_robot_movement(start_angles, max_torque_angles_num, min_torque_angles_num)
