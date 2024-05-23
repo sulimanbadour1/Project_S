@@ -61,16 +61,6 @@ acceleration = sp.diff(velocity, t)
 # Initialize pretty printing for better output readability
 sp.init_printing(use_unicode=True)
 
-# # Print the position, velocity, and acceleration equations
-# print("Position of the end effector as a function of time:")
-# sp.pprint(position)
-
-# print("\nVelocity of the end effector as a function of time:")
-# sp.pprint(velocity)
-
-print("\nAcceleration of the end effector as a function of time:")
-sp.pprint(acceleration)
-
 # Define numerical values for DH parameters
 numerical_values = {
     d_1: 0.1,
@@ -79,57 +69,44 @@ numerical_values = {
     a_3: 0.5,
 }
 
-# Define joint angles as functions of time (example: simple linear functions)
-theta_1_func = sp.lambdify(
-    t, 30 * t * sp.pi / 180
-)  # theta_1(t) = 30t degrees to radians
-theta_2_func = sp.lambdify(
-    t, 45 * t * sp.pi / 180
-)  # theta_2(t) = 45t degrees to radians
-theta_3_func = sp.lambdify(
-    t, 60 * t * sp.pi / 180
-)  # theta_3(t) = 60t degrees to radians
-theta_4_func = sp.lambdify(
-    t, 90 * t * sp.pi / 180
-)  # theta_4(t) = 90t degrees to radians
-theta_5_func = sp.lambdify(t, 0 * t * sp.pi / 180)  # theta_5(t) = 0t degrees to radians
-
-# Select a specific time to evaluate
-time_value = 1  # Example: t = 1 second
-
-# Compute numerical values for the joint angles at the selected time
-numerical_theta_values = {
-    theta_1: theta_1_func(time_value),
-    theta_2: theta_2_func(time_value),
-    theta_3: theta_3_func(time_value),
-    theta_4: theta_4_func(time_value),
-    theta_5: theta_5_func(time_value),
+# Define target angles for the joints
+target_angles = {
+    theta_1: -sp.pi,
+    theta_2: -sp.pi / 6,
+    theta_3: -sp.pi / 2,
+    theta_4: -sp.pi / 6,
+    theta_5: -sp.pi / 6,
 }
 
 # Substitute numerical values into the position, velocity, and acceleration equations
-numerical_position = position.subs(numerical_values).subs(numerical_theta_values)
-numerical_velocity = velocity.subs(numerical_values).subs(numerical_theta_values)
-numerical_acceleration = acceleration.subs(numerical_values).subs(
-    numerical_theta_values
-)
+numerical_position = position.subs(numerical_values).subs(target_angles)
+numerical_velocity = velocity.subs(numerical_values).subs(target_angles)
+numerical_acceleration = acceleration.subs(numerical_values).subs(target_angles)
 
 # Evaluate the numerical position, velocity, and acceleration
 numerical_position = numerical_position.evalf()
 numerical_velocity = numerical_velocity.evalf()
 numerical_acceleration = numerical_acceleration.evalf()
 
-# # Print numerical results
-# print("\nNumerical position of the end effector at t = 1 second:")
-# sp.pprint(numerical_position)
+# Print numerical results
+print("\nNumerical position of the end effector at target angles:")
+sp.pprint(numerical_position)
 
-# print("\nNumerical velocity of the end effector at t = 1 second:")
-# sp.pprint(numerical_velocity)
+print("\nNumerical velocity of the end effector at target angles:")
+sp.pprint(numerical_velocity)
 
-# print("\nNumerical acceleration of the end effector at t = 1 second:")
-# sp.pprint(numerical_acceleration)
+print("\nNumerical acceleration of the end effector at target angles:")
+sp.pprint(numerical_acceleration)
 
 # Define the range of time values for plotting
 time_values = np.linspace(0, 2, 100)  # from 0 to 2 seconds
+
+# Define joint angles as functions of time transitioning to target angles
+theta_1_func = sp.lambdify(t, -sp.pi * t / 2)
+theta_2_func = sp.lambdify(t, -sp.pi / 6 * t / 2)
+theta_3_func = sp.lambdify(t, -sp.pi / 2 * t / 2)
+theta_4_func = sp.lambdify(t, -sp.pi / 6 * t / 2)
+theta_5_func = sp.lambdify(t, -sp.pi / 6 * t / 2)
 
 # Compute the numerical values for joint angles over the time range
 theta_1_values = np.array([theta_1_func(t) for t in time_values])
@@ -211,4 +188,26 @@ plt.xlabel("Time (s)")
 plt.ylabel("Acceleration (m/s^2)")
 plt.legend()
 plt.grid(True)
+plt.show()
+
+# Plot the 3D trajectory of the end effector with starting and finishing points
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.plot(position_x, position_y, position_z, label="End Effector Path")
+ax.scatter(
+    position_x[0], position_y[0], position_z[0], color="red", label="Start Point", s=100
+)
+ax.scatter(
+    position_x[-1],
+    position_y[-1],
+    position_z[-1],
+    color="green",
+    label="Finish Point",
+    s=100,
+)
+ax.set_title("3D Trajectory of the End Effector")
+ax.set_xlabel("X Position (m)")
+ax.set_ylabel("Y Position (m)")
+ax.set_zlabel("Z Position (m)")
+ax.legend()
 plt.show()
