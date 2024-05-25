@@ -91,32 +91,34 @@ def compute_dynamic_analysis(
     Jv4 = p4.jacobian(theta)
     Jv5 = p5.jacobian(theta)
 
-    # Compute the kinetic energy of each link
-    T1_dot = T1[:3, :3] * theta_dot
-    T2_dot = T2[:3, :3] * theta_dot
-    T3_dot = T3[:3, :3] * theta_dot
-    T4_dot = T4[:3, :3] * theta_dot
-    T5_dot = T5[:3, :3] * theta_dot
+    # Compute angular velocities
+    R1 = T1[:3, :3]
+    R2 = T2[:3, :3]
+    R3 = T3[:3, :3]
+    R4 = T4[:3, :3]
+    R5 = T5[:3, :3]
 
-    K1 = (
-        0.5 * m1 * (Jv1.T * Jv1 * theta_dot).dot(theta_dot)
-        + 0.5 * T1_dot.T * I1 * T1_dot
+    omega1 = R1 * sp.Matrix([0, 0, theta_dot[0]])
+    omega2 = R2 * sp.Matrix([0, 0, theta_dot[1]])
+    omega3 = R3 * sp.Matrix([0, 0, theta_dot[2]])
+    omega4 = R4 * sp.Matrix([0, 0, theta_dot[3]])
+    omega5 = R5 * sp.Matrix([0, 0, theta_dot[4]])
+
+    # Compute the kinetic energy of each link
+    K1 = 0.5 * m1 * (Jv1 * theta_dot).dot(Jv1 * theta_dot) + 0.5 * omega1.dot(
+        I1 * omega1
     )
-    K2 = (
-        0.5 * m2 * (Jv2.T * Jv2 * theta_dot).dot(theta_dot)
-        + 0.5 * T2_dot.T * I2 * T2_dot
+    K2 = 0.5 * m2 * (Jv2 * theta_dot).dot(Jv2 * theta_dot) + 0.5 * omega2.dot(
+        I2 * omega2
     )
-    K3 = (
-        0.5 * m3 * (Jv3.T * Jv3 * theta_dot).dot(theta_dot)
-        + 0.5 * T3_dot.T * I3 * T3_dot
+    K3 = 0.5 * m3 * (Jv3 * theta_dot).dot(Jv3 * theta_dot) + 0.5 * omega3.dot(
+        I3 * omega3
     )
-    K4 = (
-        0.5 * m4 * (Jv4.T * Jv4 * theta_dot).dot(theta_dot)
-        + 0.5 * T4_dot.T * I4 * T4_dot
+    K4 = 0.5 * m4 * (Jv4 * theta_dot).dot(Jv4 * theta_dot) + 0.5 * omega4.dot(
+        I4 * omega4
     )
-    K5 = (
-        0.5 * m5 * (Jv5.T * Jv5 * theta_dot).dot(theta_dot)
-        + 0.5 * T5_dot.T * I5 * T5_dot
+    K5 = 0.5 * m5 * (Jv5 * theta_dot).dot(Jv5 * theta_dot) + 0.5 * omega5.dot(
+        I5 * omega5
     )
 
     K = K1 + K2 + K3 + K4 + K5
@@ -220,7 +222,7 @@ compute_dynamic_analysis(
 )
 
 # Experiment with another set of values
-angles = [30, 45, 60, 90, 120]
+angles = [sp.rad(30), sp.rad(45), sp.rad(60), sp.rad(90), sp.rad(120)]
 velocities = [1, 1, 1, 1, 1]
 accelerations = [0.1, 0.1, 0.1, 0.1, 0.1]
 
