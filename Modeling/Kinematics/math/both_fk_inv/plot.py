@@ -89,7 +89,7 @@ def plot_robot(ax, joint_positions, method_name):
 
 
 # Compute joint positions using inverse kinematics and forward kinematics
-Px, Py, Pz = 0.5, 0.7, -0.5
+Px, Py, Pz = 0.5, 0, -0.5
 omega = 0
 theta1, theta2, theta3, theta4 = inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega)
 joint_positions_kinematics = forward_kinematics(
