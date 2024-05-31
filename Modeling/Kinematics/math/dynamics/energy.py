@@ -53,14 +53,19 @@ def dh_matrix(theta, d, a, alpha):
     )
 
 
-# Define the function to compute transformation matrices more efficiently
-def compute_transforms_efficient(theta):
+# Function to compute transformation matrices
+def compute_transforms(theta):
     A1 = dh_matrix(theta[0], d1, 0, 90)
     A2 = dh_matrix(theta[1], 0, a2, 0)
     A3 = dh_matrix(theta[2], 0, a3, 0)
     A4 = dh_matrix(theta[3], 0, 0, 90)
     A5 = dh_matrix(theta[4], d5, 0, 0)
-    return A1, A2, A3, A4, A5
+    T1 = A1
+    T2 = T1 @ A2
+    T3 = T2 @ A3
+    T4 = T3 @ A4
+    T5 = T4 @ A5
+    return [T1, T2, T3, T4, T5]
 
 
 # Function to compute the Jacobian for each joint
@@ -74,42 +79,22 @@ def compute_jacobian(T_matrices):
     return np.array(J).T[:3, :]  # Only consider linear velocities
 
 
-# Optimized function to compute energies and torques
+# Function to compute energies and torques
 def compute_energies_and_torques(theta):
-    A1, A2, A3, A4, A5 = compute_transforms_efficient(theta)
-
-    T1 = A1
-    T2 = T1 @ A2
-    T3 = T2 @ A3
-    T4 = T3 @ A4
-    T5 = T4 @ A5
-
-    T_matrices = [T1, T2, T3, T4, T5]
+    T_matrices = compute_transforms(theta)
     J = compute_jacobian(T_matrices)
 
-    P1 = T1[:3, 3] / 2
-    P2 = T2[:3, 3] / 2
-    P3 = T3[:3, 3] / 2
-    P4 = T4[:3, 3] / 2
-    P5 = T5[:3, 3] / 2
+    # Potential energy
+    P = [T[:3, 3] / 2 for T in T_matrices]
+    V = sum(m * g * p[2] for m, p in zip(masses, P))
 
-    V1 = masses[0] * g * P1[2]
-    V2 = masses[1] * g * P2[2]
-    V3 = masses[2] * g * P3[2]
-    V4 = masses[3] * g * P4[2]
-    V5 = masses[4] * g * P5[2]
-    V = V1 + V2 + V3 + V4 + V5
+    # Kinetic energy
+    T_kin = sum(0.5 * m * np.linalg.norm(p) ** 2 for m, p in zip(masses, P))
 
-    T1_kin = 0.5 * masses[0] * (np.linalg.norm(P1)) ** 2 + 0.5 * inertias[0] * (0) ** 2
-    T2_kin = 0.5 * masses[1] * (np.linalg.norm(P2)) ** 2 + 0.5 * inertias[1] * (0) ** 2
-    T3_kin = 0.5 * masses[2] * (np.linalg.norm(P3)) ** 2 + 0.5 * inertias[2] * (0) ** 2
-    T4_kin = 0.5 * masses[3] * (np.linalg.norm(P4)) ** 2 + 0.5 * inertias[3] * (0) ** 2
-    T5_kin = 0.5 * masses[4] * (np.linalg.norm(P5)) ** 2 + 0.5 * inertias[4] * (0) ** 2
-    T = T1_kin + T2_kin + T3_kin + T4_kin + T5_kin
+    # Torques
+    torques = np.dot(J.T, np.array([T_kin] * 3))
 
-    torques = np.dot(J.T, np.array([T1_kin, T2_kin, T3_kin]))
-
-    return T, V, torques
+    return T_kin, V, torques
 
 
 # Define the simulation time for transitions to target positions (5 seconds each) and back
@@ -137,7 +122,7 @@ theta_interp_full = np.hstack(
     )
 )
 
-# Compute energies and torques for each time step in the 20-second simulation using the optimized function
+# Compute energies and torques for each time step in the 20-second simulation
 kinetic_energies_full = []
 potential_energies_full = []
 torques_full = []
@@ -152,8 +137,14 @@ kinetic_energies_full = np.array(kinetic_energies_full)
 potential_energies_full = np.array(potential_energies_full)
 torques_full = np.array(torques_full)
 
+# Find the maximum torque for each joint
+max_torques = np.max(np.abs(torques_full), axis=0)
+print("Maximum torques for each joint (Nm):")
+for i, torque in enumerate(max_torques):
+    print(f"Joint {i + 1}: {torque:.2f} Nm")
+
 # Plotting the energies over time for the 20-second simulation
-fig, ax = plt.subplots(2, 1, figsize=(12, 10))
+fig, ax = plt.subplots(2, 1, figsize=(14, 10))
 
 # Kinetic Energy plot
 ax[0].plot(total_time, kinetic_energies_full, "b-", label="Kinetic Energy", linewidth=2)
@@ -176,19 +167,23 @@ ax[1].grid(True)
 plt.tight_layout()
 plt.show()
 
-# Plotting the torques over time for each joint in the 20-second simulation
-fig, ax = plt.subplots(5, 1, figsize=(12, 15))
-
+# Plotting the torques over time for each joint in the same graph
+plt.figure(figsize=(14, 8))
 joint_labels = ["Joint 1", "Joint 2", "Joint 3", "Joint 4", "Joint 5"]
+colors = ["b", "g", "r", "c", "m"]
 for i in range(5):
-    ax[i].plot(
-        total_time, torques_full[:, i], label=f"Torque {joint_labels[i]}", linewidth=2
+    plt.plot(
+        total_time,
+        torques_full[:, i],
+        label=f"Torque {joint_labels[i]}",
+        color=colors[i],
+        linewidth=2,
     )
-    ax[i].set_title(f"Torque {joint_labels[i]} over Time (20 seconds)", fontsize=16)
-    ax[i].set_xlabel("Time (s)", fontsize=14)
-    ax[i].set_ylabel("Torque (Nm)", fontsize=14)
-    ax[i].legend(fontsize=12)
-    ax[i].grid(True)
 
+plt.title("Torques for Each Joint over Time (20 seconds)", fontsize=16)
+plt.xlabel("Time (s)", fontsize=14)
+plt.ylabel("Torque (Nm)", fontsize=14)
+plt.legend(fontsize=12)
+plt.grid(True)
 plt.tight_layout()
 plt.show()
