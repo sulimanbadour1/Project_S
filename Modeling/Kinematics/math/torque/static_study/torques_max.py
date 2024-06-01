@@ -169,7 +169,7 @@ external_forces = [0, 0, 0, 0, 0, 0]  # No external forces/moments
 tau_total, symbols = compute_symbolic_torques()
 
 # Define the ranges for each joint
-theta_1_range = np.linspace(0, 360, 7)
+theta_1_range = np.linspace(-180, 180, 7)
 theta_2_range = np.linspace(-90, 90, 7)
 theta_3_range = np.linspace(-90, 90, 7)
 theta_4_range = np.linspace(-90, 90, 7)
