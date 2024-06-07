@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 # Define the computation function
-def compute_symbolic_dynamics():
+def compute_symbolic_torques():
     # Define symbolic variables for joint angles, DH parameters, masses, and inertia
     theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
         "theta_1 theta_2 theta_3 theta_4 theta_5"
@@ -14,11 +14,6 @@ def compute_symbolic_dynamics():
     alpha = [90, 0, 0, 90, 0]
     m1, m2, m3, m4, m5 = sp.symbols("m1 m2 m3 m4 m5")
     g = sp.Matrix([0, 0, -9.81])
-    Ixx1, Iyy1, Izz1 = sp.symbols("Ixx1 Iyy1 Izz1")
-    Ixx2, Iyy2, Izz2 = sp.symbols("Ixx2 Iyy2 Izz2")
-    Ixx3, Iyy3, Izz3 = sp.symbols("Ixx3 Iyy3 Izz3")
-    Ixx4, Iyy4, Izz4 = sp.symbols("Ixx4 Iyy4 Izz4")
-    Ixx5, Iyy5, Izz5 = sp.symbols("Ixx5 Iyy5 Izz5")
 
     # Helper function to create a transformation matrix from DH parameters
     def dh_matrix(theta, d, a, alpha):
@@ -141,22 +136,13 @@ def compute_symbolic_dynamics():
         Mx,
         My,
         Mz,
-        Ixx1,
-        Iyy1,
-        Izz1,
-        Ixx2,
-        Iyy2,
-        Izz2,
-        Ixx3,
-        Iyy3,
-        Izz3,
-        Ixx4,
-        Iyy4,
-        Izz4,
-        Ixx5,
-        Iyy5,
-        Izz5,
     ]
+
+
+def compute_numerical_torques(tau_total, symbols, values):
+    # Compute numerical torques
+    numerical_torques = tau_total.subs(values)
+    return numerical_torques
 
 
 # Define parameters for the robot
@@ -180,7 +166,31 @@ masses[-1] += mass_camera + mass_lights  # Add to the last mass (end effector)
 external_forces = [0, 0, 0, 0, 0, 0]  # No external forces/moments
 
 # Compute symbolic torques
-tau_total, symbols = compute_symbolic_dynamics()
+tau_total, symbols = compute_symbolic_torques()
+
+# Define the ranges for each joint
+theta_1_range = np.linspace(-180, 180, 7)
+theta_2_range = np.linspace(-90, 90, 7)
+theta_3_range = np.linspace(-90, 90, 7)
+theta_4_range = np.linspace(-90, 90, 7)
+theta_5_range = np.linspace(0, 360, 7)
+
+# Create meshgrid for joint angles
+theta_1_vals, theta_2_vals, theta_3_vals, theta_4_vals, theta_5_vals = np.meshgrid(
+    theta_1_range,
+    theta_2_range,
+    theta_3_range,
+    theta_4_range,
+    theta_5_range,
+    indexing="ij",
+)
+
+# Flatten the meshgrid arrays for easier iteration
+theta_1_vals = theta_1_vals.flatten()
+theta_2_vals = theta_2_vals.flatten()
+theta_3_vals = theta_3_vals.flatten()
+theta_4_vals = theta_4_vals.flatten()
+theta_5_vals = theta_5_vals.flatten()
 
 # Dictionary to store maximum and minimum torques for each joint
 max_torques = {i: -np.inf for i in range(1, 6)}  # Initialize with negative infinity
