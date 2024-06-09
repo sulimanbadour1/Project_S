@@ -1,6 +1,7 @@
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
+from itertools import product
 
 
 # Define the computation function
@@ -11,7 +12,6 @@ def compute_torques(
     a_3_val,
     masses,
     inertias,
-    angles,
     mass_camera,
     mass_lights,
     external_forces,
@@ -126,20 +126,8 @@ def compute_torques(
     # Sum the torques due to gravity and external forces/torques
     tau_total = tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5 + tau_ext
 
-    # Initialize pretty printing for better output readability
-    sp.init_printing(use_unicode=True)
-
-    # Try simplifying the total torques
-    try:
-        tau_total_simplified = tau_total.simplify()
-    except Exception as e:
-        print(f"Simplification failed: {e}")
-        tau_total_simplified = tau_total
-
-    # Check if simplification produced a valid result
-    if tau_total_simplified is None:
-        print("Simplification resulted in None. Using unsimplified torques.")
-        tau_total_simplified = tau_total
+    # Simplify the total torques
+    tau_total_simplified = sp.simplify(tau_total)
 
     # Provide numerical values for testing
     values = {
@@ -178,46 +166,33 @@ def compute_torques(
     }
 
     # Initialize the maximum torque tracker
-    max_torque_per_joint = [-float("inf")] * 5
+    max_torque_per_joint = np.zeros(5)
 
     # Define the range for joint angles
     angle_range = np.linspace(-np.pi, np.pi, 10)  # 10 steps from -π to π
 
-    for theta_1_val in angle_range:
-        for theta_2_val in angle_range:
-            for theta_3_val in angle_range:
-                for theta_4_val in angle_range:
-                    for theta_5_val in angle_range:
-                        values.update(
-                            {
-                                theta_1: theta_1_val,
-                                theta_2: theta_2_val,
-                                theta_3: theta_3_val,
-                                theta_4: theta_4_val,
-                                theta_5: theta_5_val,
-                            }
-                        )
+    # Generate all combinations of joint angles
+    angle_combinations = product(angle_range, repeat=5)
 
-                        # Compute numerical torques for the current configuration
-                        numerical_torques = tau_total_simplified.subs(values)
+    # Precompute torque function
+    tau_total_func = sp.lambdify(
+        (theta_1, theta_2, theta_3, theta_4, theta_5),
+        tau_total_simplified.subs(values),
+        "numpy",
+    )
 
-                        if numerical_torques is None:
-                            print(
-                                "Numerical substitution resulted in None. Using unsimplified torques."
-                            )
-                            numerical_torques = tau_total.subs(values)
-
-                        # Update the maximum torques observed
-                        for i in range(5):
-                            torque_val = float(numerical_torques[i])
-                            if abs(torque_val) > abs(max_torque_per_joint[i]):
-                                max_torque_per_joint[i] = torque_val
+    # Iterate over all angle combinations and compute torques
+    for angles in angle_combinations:
+        numerical_torques = np.array(tau_total_func(*angles), dtype=float).flatten()
+        max_torque_per_joint = np.maximum(
+            max_torque_per_joint, np.abs(numerical_torques)
+        )
 
     # Plot the maximum torques
     joints = ["Joint 1", "Joint 2", "Joint 3", "Joint 4", "Joint 5"]
 
     plt.figure(figsize=(10, 6))
-    bars = plt.bar(joints, max_torque_per_joint, color="blue")
+    bars = plt.bar(joints, max_torque_per_joint.tolist(), color="blue")
     plt.xlabel("Joints")
     plt.ylabel("Maximum Torque (Nm)")
     plt.title("Maximum Static Torque on Each Joint Across All Configurations")
@@ -238,8 +213,8 @@ def compute_torques(
     plt.show()
 
     # Print the maximum torques
-    print(f"Maximum Torques for given values: {max_torque_per_joint}")
-    return max_torque_per_joint
+    print(f"Maximum Torques for given values: {max_torque_per_joint.tolist()}")
+    return max_torque_per_joint.tolist()
 
 
 # Experiment with different values
@@ -269,7 +244,6 @@ max_torque_per_joint = compute_torques(
     a_3_val,
     masses,
     inertias,
-    [0, 0, 0, 0, 0],  # Placeholder, angles will be varied within the function
     mass_camera,
     mass_lights,
     external_forces,
@@ -277,7 +251,3 @@ max_torque_per_joint = compute_torques(
 )
 
 print(f"Maximum Torques for given values: {max_torque_per_joint}")
-
-# Explanation for negative torques:
-# The torques can be negative because they depend on the direction of the force/movement.
-# Negative torque values indicate that the force/movement is in the opposite direction to the positive torque direction.
