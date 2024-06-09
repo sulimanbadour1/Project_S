@@ -74,14 +74,14 @@ def compute_torques_lagrangian_dynamic(
         return [omega_1, omega_2, omega_3, omega_4, omega_5]
 
     # Compute the linear velocities of the center of mass for each link using finite differences
-    def compute_linear_velocities(com_positions, angle_dots):
+    def compute_linear_velocities(com_positions, angles, angle_dots):
         epsilon = 1e-5
         linear_velocities = []
         for i in range(5):
             perturbation = np.zeros(5)
             perturbation[i] = epsilon
-            angles_plus = np.array(angle_dots) + perturbation
-            angles_minus = np.array(angle_dots) - perturbation
+            angles_plus = np.array(angles) + perturbation
+            angles_minus = np.array(angles) - perturbation
             transforms_plus = compute_transforms(angles_plus)
             transforms_minus = compute_transforms(angles_minus)
             com_positions_plus = compute_com_positions(transforms_plus)
@@ -97,7 +97,7 @@ def compute_torques_lagrangian_dynamic(
         transforms = compute_transforms(angles)
         com_positions = compute_com_positions(transforms)
         omega = compute_angular_velocities(angle_dots)
-        p_dot = compute_linear_velocities(com_positions, angle_dots)
+        p_dot = compute_linear_velocities(com_positions, angles, angle_dots)
 
         T_kinetic = 0
         for i in range(5):
@@ -128,11 +128,11 @@ def compute_torques_lagrangian_dynamic(
         return L
 
     # Numerical values for testing
-    angle_range = np.linspace(-np.pi, np.pi, 10)
+    angle_range = np.linspace(-np.pi, np.pi, 5)  # Reduced number of steps
     angle_dots = [0, 0, 0, 0, 0]  # Assuming initial velocities are zero
     max_torque_per_joint = np.zeros(5)
 
-    # Iterate over all angle combinations and compute torques
+    # Iterate over a subset of angle combinations and compute torques
     for angles in product(angle_range, repeat=5):
         L = compute_lagrangian(
             angles, angle_dots, masses, inertias, mass_camera, mass_lights
