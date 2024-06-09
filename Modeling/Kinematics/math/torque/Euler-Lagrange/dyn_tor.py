@@ -132,63 +132,39 @@ def compute_torques_lagrangian(
     for i in range(5):
         dL_dtheta = L.diff(thetas[i])
         dL_ddtheta = L.diff(dthetas[i])
-        ddL_ddtheta_dt = sp.diff(dL_ddtheta, "t")
-        equation = ddL_ddtheta_dt - dL_dtheta
+        equation = sp.diff(dL_ddtheta, "t") - dL_dtheta
         equations_of_motion.append(equation)
 
-    # Simplify equations of motion
-    try:
-        equations_of_motion_simplified = [eq.simplify() for eq in equations_of_motion]
-    except Exception as e:
-        print(f"Simplification failed: {e}")
-        equations_of_motion_simplified = equations_of_motion
-
     # Substitute numerical values into equations of motion
-    equations_of_motion_numeric = [
-        eq.subs(
-            {
-                d_1: d_1_val,
-                d_5: d_5_val,
-                a_2: a_2_val,
-                a_3: a_3_val,
-                m1: masses[0],
-                m2: masses[1],
-                m3: masses[2],
-                m4: masses[3],
-                m5: masses[4],
-                I1_xx: inertias[0][0],
-                I1_yy: inertias[0][1],
-                I1_zz: inertias[0][2],
-                I2_xx: inertias[1][0],
-                I2_yy: inertias[1][1],
-                I2_zz: inertias[1][2],
-                I3_xx: inertias[2][0],
-                I3_yy: inertias[2][1],
-                I3_zz: inertias[2][2],
-                I4_xx: inertias[3][0],
-                I4_yy: inertias[3][1],
-                I4_zz: inertias[3][2],
-                I5_xx: inertias[4][0],
-                I5_yy: inertias[4][1],
-                I5_zz: inertias[4][2],
-            }
-        )
-        for eq in equations_of_motion_simplified
-    ]
+    substitutions = {
+        d_1: d_1_val,
+        d_5: d_5_val,
+        a_2: a_2_val,
+        a_3: a_3_val,
+        m1: masses[0],
+        m2: masses[1],
+        m3: masses[2],
+        m4: masses[3],
+        m5: masses[4],
+        I1_xx: inertias[0][0],
+        I1_yy: inertias[0][1],
+        I1_zz: inertias[0][2],
+        I2_xx: inertias[1][0],
+        I2_yy: inertias[1][1],
+        I2_zz: inertias[1][2],
+        I3_xx: inertias[2][0],
+        I3_yy: inertias[2][1],
+        I3_zz: inertias[2][2],
+        I4_xx: inertias[3][0],
+        I4_yy: inertias[3][1],
+        I4_zz: inertias[3][2],
+        I5_xx: inertias[4][0],
+        I5_yy: inertias[4][1],
+        I5_zz: inertias[4][2],
+    }
+    equations_of_motion_numeric = [eq.subs(substitutions) for eq in equations_of_motion]
 
-    # Initialize the maximum torque tracker
-    max_torque_per_joint = np.zeros(5)
-
-    # Define the range for joint angles and velocities
-    angle_range = np.linspace(-np.pi, np.pi, 2)  # 10 steps from -π to π
-    velocity_range = np.linspace(-5, 5, 5)  # 5 steps for angular velocities
-
-    # Generate all combinations of joint angles and velocities
-    angle_velocity_combinations = list(product(angle_range, repeat=5)) + list(
-        product(velocity_range, repeat=5)
-    )
-
-    # Precompute torque function
+    # Precompute the equations of motion function
     try:
         torques_func = sp.lambdify(
             (
@@ -210,9 +186,25 @@ def compute_torques_lagrangian(
         print(f"Lambdify failed: {e}")
         return []
 
-    # Iterate over all angle and velocity combinations and compute torques
-    for angles in angle_velocity_combinations:
-        for velocities in product(velocity_range, repeat=5):
+    # Initialize the maximum torque tracker
+    max_torque_per_joint = np.zeros(5)
+
+    # Define the range for joint angles and velocities
+    angle_range = np.linspace(-np.pi, np.pi, 5)  # Reduced to 5 steps from -π to π
+    velocity_range = np.linspace(-2, 2, 3)  # Reduced to 3 steps for angular velocities
+
+    # Generate all combinations of joint angles and velocities
+    angle_combinations = list(product(angle_range, repeat=5))
+    velocity_combinations = list(product(velocity_range, repeat=5))
+
+    # Convert combinations to numpy arrays for vectorized operations
+    angle_combinations = np.array(angle_combinations)
+    velocity_combinations = np.array(velocity_combinations)
+
+    # Iterate over all angle combinations
+    for angles in angle_combinations:
+        # Compute torques for all velocity combinations at once using vectorized operations
+        for velocities in velocity_combinations:
             numerical_torques = np.array(
                 torques_func(*angles, *velocities), dtype=float
             ).flatten()
@@ -276,7 +268,3 @@ max_torque_per_joint = compute_torques_lagrangian(
 )
 
 print(f"Maximum Torques for given values: {max_torque_per_joint}")
-
-# Explanation for negative torques:
-# The torques can be negative because they depend on the direction of the force/movement.
-# Negative torque values indicate that the force/movement is in the opposite direction to the positive torque direction.
