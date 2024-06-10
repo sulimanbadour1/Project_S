@@ -2,6 +2,7 @@ import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
+from multiprocessing import Pool
 
 
 # Define the computation function for dynamic torques
@@ -217,14 +218,11 @@ def compute_dynamic_torques(
         theta_ddot_5: q_ddot_val[4],
     }
 
-    # Initialize the maximum torque tracker
-    max_torque_per_joint = np.zeros(5)
-
     # Define the range for joint angles
-    angle_range = np.linspace(-np.pi, np.pi, 2)  # 10 steps from -π to π
+    angle_range = np.linspace(-np.pi, np.pi, 5)  # Reduced to 5 steps from -π to π
 
     # Generate all combinations of joint angles
-    angle_combinations = product(angle_range, repeat=5)
+    angle_combinations = list(product(angle_range, repeat=5))
 
     # Precompute torque function
     tau_total_func = sp.lambdify(
@@ -233,12 +231,16 @@ def compute_dynamic_torques(
         "numpy",
     )
 
-    # Iterate over all angle combinations and compute torques
-    for angles in angle_combinations:
+    # Function to compute the maximum torque for a given angle combination
+    def compute_max_torque(angles):
         numerical_torques = np.array(tau_total_func(*angles), dtype=float).flatten()
-        max_torque_per_joint = np.maximum(
-            max_torque_per_joint, np.abs(numerical_torques)
-        )
+        return np.abs(numerical_torques)
+
+    # Use multiprocessing to compute the maximum torques in parallel
+    with Pool() as pool:
+        results = pool.map(compute_max_torque, angle_combinations)
+
+    max_torque_per_joint = np.max(results, axis=0)
 
     # Plot the maximum torques
     joints = ["Joint 1", "Joint 2", "Joint 3", "Joint 4", "Joint 5"]
