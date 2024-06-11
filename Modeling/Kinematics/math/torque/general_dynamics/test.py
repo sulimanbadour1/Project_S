@@ -109,22 +109,47 @@ def compute_dynamic_torques(
     G = G1 + G2 + G3 + G4 + G5
 
     # Compute the inertia matrix for each link (assuming simple diagonal inertia for each link)
-    I1 = sp.diag(m1 * d_1_val**2 / 12, m1 * d_1_val**2 / 12, m1 * d_1_val**2 / 12)
-    I2 = sp.diag(m2 * a_2_val**2 / 12, m2 * a_2_val**2 / 12, m2 * a_2_val**2 / 12)
-    I3 = sp.diag(m3 * a_3_val**2 / 12, m3 * a_3_val**2 / 12, m3 * a_3_val**2 / 12)
-    I4 = sp.diag(m4 * d_5_val**2 / 12, m4 * d_5_val**2 / 12, m4 * d_5_val**2 / 12)
+    I1 = sp.diag(
+        masses[0] * d_1_val**2 / 12,
+        masses[0] * d_1_val**2 / 12,
+        masses[0] * d_1_val**2 / 12,
+    )
+    I2 = sp.diag(
+        masses[1] * a_2_val**2 / 12,
+        masses[1] * a_2_val**2 / 12,
+        masses[1] * a_2_val**2 / 12,
+    )
+    I3 = sp.diag(
+        masses[2] * a_3_val**2 / 12,
+        masses[2] * a_3_val**2 / 12,
+        masses[2] * a_3_val**2 / 12,
+    )
+    I4 = sp.diag(
+        masses[3] * d_5_val**2 / 12,
+        masses[3] * d_5_val**2 / 12,
+        masses[3] * d_5_val**2 / 12,
+    )
     I5 = sp.diag(
-        (m5 + mass_camera + mass_lights) * d_5_val**2 / 12,
-        (m5 + mass_camera + mass_lights) * d_5_val**2 / 12,
-        (m5 + mass_camera + mass_lights) * d_5_val**2 / 12,
+        (masses[4] + mass_camera + mass_lights) * d_5_val**2 / 12,
+        (masses[4] + mass_camera + mass_lights) * d_5_val**2 / 12,
+        (masses[4] + mass_camera + mass_lights) * d_5_val**2 / 12,
     )
 
     # Compute the angular velocity Jacobians for each link
-    Jw1 = sp.Matrix.hstack(sp.zeros(3, 0), sp.eye(3), sp.zeros(3, 2))
-    Jw2 = sp.Matrix.hstack(sp.zeros(3, 1), T1[:3, :3], sp.zeros(3, 1))
-    Jw3 = sp.Matrix.hstack(sp.zeros(3, 2), T2[:3, :3])
-    Jw4 = sp.Matrix.hstack(sp.zeros(3, 3), T3[:3, :3])
-    Jw5 = sp.Matrix.hstack(sp.zeros(3, 4), T4[:3, :3])
+    Jw1 = sp.zeros(3, 5)
+    Jw1[:, 0] = sp.eye(3)[:, 0]
+
+    Jw2 = sp.zeros(3, 5)
+    Jw2[:, 0:2] = T1[:3, :3] * sp.eye(3)[:, :2]
+
+    Jw3 = sp.zeros(3, 5)
+    Jw3[:, 0:3] = T2[:3, :3] * sp.eye(3)[:, :3]
+
+    Jw4 = sp.zeros(3, 5)
+    Jw4[:, 0:4] = T3[:3, :3] * sp.eye(3)[:, :4]
+
+    Jw5 = sp.zeros(3, 5)
+    Jw5[:, 0:5] = T4[:3, :3] * sp.eye(3)
 
     # Compute the inertia matrix for the entire robot
     D = sp.zeros(5, 5)
@@ -135,17 +160,17 @@ def compute_dynamic_torques(
     C = sp.zeros(5, 5)
     for i in range(5):
         for j in range(5):
-            C[i, j] = (
-                0.5
-                * sum(
-                    [
+            C[i, j] = sum(
+                [
+                    0.5
+                    * (
                         D[i, j].diff(theta[k])
                         + D[i, k].diff(theta[j])
                         - D[j, k].diff(theta[i])
-                        for k in range(5)
-                    ]
-                )
-                * theta_dot[k]
+                    )
+                    * theta_dot[k]
+                    for k in range(5)
+                ]
             )
 
     # Define symbolic variables for external forces and torques
@@ -209,9 +234,7 @@ def compute_dynamic_torques(
 
     # Precompute torque function
     tau_total_func = sp.lambdify(
-        (theta + theta_dot + theta_ddot),
-        tau_total_simplified.subs(values),
-        "numpy",
+        (theta + theta_dot + theta_ddot), tau_total_simplified.subs(values), "numpy"
     )
 
     # Iterate over all combinations of joint angles, velocities, and accelerations, and compute torques
