@@ -140,16 +140,16 @@ def compute_dynamic_torques(
     Jw1[:, 0] = sp.eye(3)[:, 0]
 
     Jw2 = sp.zeros(3, 5)
-    Jw2[:, 0:2] = T1[:3, :3] * sp.eye(3)[:, :2]
+    Jw2[:, :2] = T1[:3, :3] @ sp.eye(3)[:, :2]
 
     Jw3 = sp.zeros(3, 5)
-    Jw3[:, 0:3] = T2[:3, :3] * sp.eye(3)[:, :3]
+    Jw3[:, :3] = T2[:3, :3] @ sp.eye(3)[:, :3]
 
     Jw4 = sp.zeros(3, 5)
-    Jw4[:, 0:4] = T3[:3, :3] * sp.eye(3)[:, :4]
+    Jw4[:, :4] = T3[:3, :3] @ sp.eye(3)[:, :3]  # This line needed the correct slicing
 
     Jw5 = sp.zeros(3, 5)
-    Jw5[:, 0:5] = T4[:3, :3] * sp.eye(3)
+    Jw5[:, :5] = T4[:3, :3] @ sp.eye(3)  # This line needed the correct slicing
 
     # Compute the inertia matrix for the entire robot
     D = sp.zeros(5, 5)
@@ -157,20 +157,19 @@ def compute_dynamic_torques(
         D += Jw.T * I * Jw
 
     # Compute the Coriolis and centrifugal forces matrix
+    # Compute the Coriolis and centrifugal forces matrix
     C = sp.zeros(5, 5)
     for i in range(5):
         for j in range(5):
             C[i, j] = sum(
-                [
-                    0.5
-                    * (
-                        D[i, j].diff(theta[k])
-                        + D[i, k].diff(theta[j])
-                        - D[j, k].diff(theta[i])
-                    )
-                    * theta_dot[k]
-                    for k in range(5)
-                ]
+                0.5
+                * (
+                    D[i, j].diff(theta[k])
+                    + D[i, k].diff(theta[j])
+                    - D[j, k].diff(theta[i])
+                )
+                * theta_dot[k]
+                for k in range(5)
             )
 
     # Define symbolic variables for external forces and torques
