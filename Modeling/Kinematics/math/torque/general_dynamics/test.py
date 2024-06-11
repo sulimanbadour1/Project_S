@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from itertools import product
 
 
-def compute_torques(
+def compute_dynamic_torques(
     d_1_val,
     d_5_val,
     a_2_val,
@@ -16,7 +16,7 @@ def compute_torques(
     external_torques,
 ):
     """
-    Compute the maximum static torques for a robotic arm across all configurations.
+    Compute the maximum dynamic torques for a robotic arm across all configurations.
 
     Parameters:
     d_1_val (float): DH parameter d_1.
@@ -32,9 +32,13 @@ def compute_torques(
     Returns:
     list: Maximum torques for each joint.
     """
-    # Define symbolic variables for joint angles, DH parameters, and masses
-    theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
-        "theta_1 theta_2 theta_3 theta_4 theta_5"
+    # Define symbolic variables for joint angles, DH parameters, velocities, accelerations, and masses
+    theta = sp.symbols("theta_1 theta_2 theta_3 theta_4 theta_5")
+    theta_dot = sp.symbols(
+        "theta_dot_1 theta_dot_2 theta_dot_3 theta_dot_4 theta_dot_5"
+    )
+    theta_ddot = sp.symbols(
+        "theta_ddot_1 theta_ddot_2 theta_ddot_3 theta_ddot_4 theta_ddot_5"
     )
     d_1, d_5 = sp.symbols("d_1 d_5")
     a_2, a_3 = sp.symbols("a_2 a_3")
@@ -65,11 +69,11 @@ def compute_torques(
         )
 
     # Create transformation matrices
-    A1 = dh_matrix(theta_1, d_1, 0, alpha[0])
-    A2 = dh_matrix(theta_2, 0, a_2, alpha[1])
-    A3 = dh_matrix(theta_3, 0, a_3, alpha[2])
-    A4 = dh_matrix(theta_4, 0, 0, alpha[3])
-    A5 = dh_matrix(theta_5, d_5, 0, alpha[4])
+    A1 = dh_matrix(theta[0], d_1, 0, alpha[0])
+    A2 = dh_matrix(theta[1], 0, a_2, alpha[1])
+    A3 = dh_matrix(theta[2], 0, a_3, alpha[2])
+    A4 = dh_matrix(theta[3], 0, 0, alpha[3])
+    A5 = dh_matrix(theta[4], d_5, 0, alpha[4])
 
     # Compute the individual transformation matrices
     T1 = A1
@@ -86,27 +90,63 @@ def compute_torques(
     p5 = T5[:3, 3] / 2
 
     # Compute the Jacobians for each center of mass
-    Jv1 = p1.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
-    Jv2 = p2.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
-    Jv3 = p3.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
-    Jv4 = p4.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
-    Jv5 = p5.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
+    Jv1 = p1.jacobian(theta)
+    Jv2 = p2.jacobian(theta)
+    Jv3 = p3.jacobian(theta)
+    Jv4 = p4.jacobian(theta)
+    Jv5 = p5.jacobian(theta)
 
     # Compute the gravity vector for each link (assuming center of mass at the link origin)
-    G1 = m1 * g
-    G2 = m2 * g
-    G3 = m3 * g
-    G4 = m4 * g
-    G5 = (
-        m5 + mass_camera + mass_lights
-    ) * g  # Adding camera and lights masses to the last link
+    G1 = Jv1.T * (m1 * g)
+    G2 = Jv2.T * (m2 * g)
+    G3 = Jv3.T * (m3 * g)
+    G4 = Jv4.T * (m4 * g)
+    G5 = Jv5.T * (
+        (m5 + mass_camera + mass_lights) * g
+    )  # Adding camera and lights masses to the last link
 
-    # Compute the torques due to gravity for each link
-    tau_g1 = Jv1.T * G1
-    tau_g2 = Jv2.T * G2
-    tau_g3 = Jv3.T * G3
-    tau_g4 = Jv4.T * G4
-    tau_g5 = Jv5.T * G5
+    # Sum the gravity vectors
+    G = G1 + G2 + G3 + G4 + G5
+
+    # Compute the inertia matrix for each link (assuming simple diagonal inertia for each link)
+    I1 = sp.diag(m1 * d_1_val**2 / 12, m1 * d_1_val**2 / 12, m1 * d_1_val**2 / 12)
+    I2 = sp.diag(m2 * a_2_val**2 / 12, m2 * a_2_val**2 / 12, m2 * a_2_val**2 / 12)
+    I3 = sp.diag(m3 * a_3_val**2 / 12, m3 * a_3_val**2 / 12, m3 * a_3_val**2 / 12)
+    I4 = sp.diag(m4 * d_5_val**2 / 12, m4 * d_5_val**2 / 12, m4 * d_5_val**2 / 12)
+    I5 = sp.diag(
+        (m5 + mass_camera + mass_lights) * d_5_val**2 / 12,
+        (m5 + mass_camera + mass_lights) * d_5_val**2 / 12,
+        (m5 + mass_camera + mass_lights) * d_5_val**2 / 12,
+    )
+
+    # Compute the angular velocity Jacobians for each link
+    Jw1 = sp.Matrix.hstack(sp.zeros(3, 0), sp.eye(3), sp.zeros(3, 2))
+    Jw2 = sp.Matrix.hstack(sp.zeros(3, 1), T1[:3, :3], sp.zeros(3, 1))
+    Jw3 = sp.Matrix.hstack(sp.zeros(3, 2), T2[:3, :3])
+    Jw4 = sp.Matrix.hstack(sp.zeros(3, 3), T3[:3, :3])
+    Jw5 = sp.Matrix.hstack(sp.zeros(3, 4), T4[:3, :3])
+
+    # Compute the inertia matrix for the entire robot
+    D = sp.zeros(5, 5)
+    for Jw, I in zip([Jw1, Jw2, Jw3, Jw4, Jw5], [I1, I2, I3, I4, I5]):
+        D += Jw.T * I * Jw
+
+    # Compute the Coriolis and centrifugal forces matrix
+    C = sp.zeros(5, 5)
+    for i in range(5):
+        for j in range(5):
+            C[i, j] = (
+                0.5
+                * sum(
+                    [
+                        D[i, j].diff(theta[k])
+                        + D[i, k].diff(theta[j])
+                        - D[j, k].diff(theta[i])
+                        for k in range(5)
+                    ]
+                )
+                * theta_dot[k]
+            )
 
     # Define symbolic variables for external forces and torques
     F_ext_x, F_ext_y, F_ext_z = sp.symbols("F_ext_x F_ext_y F_ext_z")
@@ -118,14 +158,14 @@ def compute_torques(
     T_ext = sp.Matrix([T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5])
 
     # Compute the Jacobian for the external force application point (assuming it is the end effector)
-    Jv_ext = T5[:3, 3].jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
+    Jv_ext = T5[:3, 3].jacobian(theta)
 
     # Compute the torques due to external forces and torques
     tau_ext_forces = Jv_ext.T * F_ext
     tau_ext = tau_ext_forces + T_ext
 
-    # Sum the torques due to gravity and external forces/torques
-    tau_total = tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5 + tau_ext
+    # Compute the total torque required for each joint
+    tau_total = D * sp.Matrix(theta_ddot) + C * sp.Matrix(theta_dot) + G + tau_ext
 
     # Simplify the total torques
     tau_total_simplified = sp.simplify(tau_total)
@@ -155,30 +195,42 @@ def compute_torques(
     max_torque_per_joint = np.zeros(5)
     top_configurations = []
 
-    # Define the range for joint angles
+    # Define the range for joint angles, velocities, and accelerations
     angle_range = np.linspace(-np.pi, np.pi, 10)  # 10 steps from -π to π
+    velocity_range = np.linspace(-1, 1, 5)  # Velocity range from -1 to 1 rad/s
+    acceleration_range = np.linspace(
+        -5, 5, 5
+    )  # Acceleration range from -5 to 5 rad/s^2
 
-    # Generate all combinations of joint angles
+    # Generate all combinations of joint angles, velocities, and accelerations
     angle_combinations = list(product(angle_range, repeat=5))
+    velocity_combinations = list(product(velocity_range, repeat=5))
+    acceleration_combinations = list(product(acceleration_range, repeat=5))
 
     # Precompute torque function
     tau_total_func = sp.lambdify(
-        (theta_1, theta_2, theta_3, theta_4, theta_5),
+        (theta + theta_dot + theta_ddot),
         tau_total_simplified.subs(values),
         "numpy",
     )
 
-    # Iterate over all angle combinations and compute torques
+    # Iterate over all combinations of joint angles, velocities, and accelerations, and compute torques
     for angles in angle_combinations:
-        numerical_torques = np.array(tau_total_func(*angles), dtype=float).flatten()
-        if np.any(np.abs(numerical_torques) > max_torque_per_joint):
-            max_torque_per_joint = np.maximum(
-                max_torque_per_joint, np.abs(numerical_torques)
-            )
-            top_configurations.append((angles, numerical_torques))
+        for velocities in velocity_combinations:
+            for accelerations in acceleration_combinations:
+                numerical_torques = np.array(
+                    tau_total_func(*angles, *velocities, *accelerations), dtype=float
+                ).flatten()
+                if np.any(np.abs(numerical_torques) > max_torque_per_joint):
+                    max_torque_per_joint = np.maximum(
+                        max_torque_per_joint, np.abs(numerical_torques)
+                    )
+                    top_configurations.append(
+                        (angles, velocities, accelerations, numerical_torques)
+                    )
 
     # Sort the configurations by the highest torque experienced
-    top_configurations.sort(key=lambda x: np.max(np.abs(x[1])), reverse=True)
+    top_configurations.sort(key=lambda x: np.max(np.abs(x[3])), reverse=True)
     top_configurations = top_configurations[:3]  # Get top three configurations
 
     # Plot the maximum torques
@@ -188,7 +240,7 @@ def compute_torques(
     bars = plt.bar(joints, max_torque_per_joint.tolist(), color="blue")
     plt.xlabel("Joints")
     plt.ylabel("Maximum Torque (Nm)")
-    plt.title("Maximum Static Torque on Each Joint Across All Configurations")
+    plt.title("Maximum Dynamic Torque on Each Joint Across All Configurations")
     plt.grid(True, linestyle="--", alpha=0.6)
 
     # Annotate bars with their values
@@ -210,39 +262,41 @@ def compute_torques(
 
     # Plot the top three configurations
     fig = plt.figure(figsize=(15, 10))
-    for i, (angles, torques) in enumerate(top_configurations):
+    for i, (angles, velocities, accelerations, torques) in enumerate(
+        top_configurations
+    ):
         ax = fig.add_subplot(1, 3, i + 1, projection="3d")
 
         # Evaluate transformation matrices
-        T1_eval = np.array(T1.subs(values).subs({theta_1: angles[0]})).astype(
+        T1_eval = np.array(T1.subs(values).subs({theta[0]: angles[0]})).astype(
             np.float64
         )
         T2_eval = np.array(
-            T2.subs(values).subs({theta_1: angles[0], theta_2: angles[1]})
+            T2.subs(values).subs({theta[0]: angles[0], theta[1]: angles[1]})
         ).astype(np.float64)
         T3_eval = np.array(
             T3.subs(values).subs(
-                {theta_1: angles[0], theta_2: angles[1], theta_3: angles[2]}
+                {theta[0]: angles[0], theta[1]: angles[1], theta[2]: angles[2]}
             )
         ).astype(np.float64)
         T4_eval = np.array(
             T4.subs(values).subs(
                 {
-                    theta_1: angles[0],
-                    theta_2: angles[1],
-                    theta_3: angles[2],
-                    theta_4: angles[3],
+                    theta[0]: angles[0],
+                    theta[1]: angles[1],
+                    theta[2]: angles[2],
+                    theta[3]: angles[3],
                 }
             )
         ).astype(np.float64)
         T5_eval = np.array(
             T5.subs(values).subs(
                 {
-                    theta_1: angles[0],
-                    theta_2: angles[1],
-                    theta_3: angles[2],
-                    theta_4: angles[3],
-                    theta_5: angles[4],
+                    theta[0]: angles[0],
+                    theta[1]: angles[1],
+                    theta[2]: angles[2],
+                    theta[3]: angles[3],
+                    theta[4]: angles[4],
                 }
             )
         ).astype(np.float64)
@@ -283,9 +337,9 @@ mass_lights = 0.5
 external_forces = [0, 0, 0]  # No external forces in this example
 external_torques = [0, 0, 0, 0, 0]  # No external torques in this example
 
-# Note: This is a static analysis
-print("Performing static torque analysis across all configurations...")
-max_torque_per_joint = compute_torques(
+# Note: This is a dynamic analysis
+print("Performing dynamic torque analysis across all configurations...")
+max_torque_per_joint = compute_dynamic_torques(
     d_1_val,
     d_5_val,
     a_2_val,
