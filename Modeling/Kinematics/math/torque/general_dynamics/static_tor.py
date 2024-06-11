@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from itertools import product
 
 
-# Define the computation function
 def compute_torques(
     d_1_val,
     d_5_val,
@@ -16,7 +15,24 @@ def compute_torques(
     external_forces,
     external_torques,
 ):
-    # Define symbolic variables for joint angles, DH parameters, masses
+    """
+    Compute the maximum static torques for a robotic arm across all configurations.
+
+    Parameters:
+    d_1_val (float): DH parameter d_1.
+    d_5_val (float): DH parameter d_5.
+    a_2_val (float): DH parameter a_2.
+    a_3_val (float): DH parameter a_3.
+    masses (list): List of masses for each link.
+    mass_camera (float): Mass of the camera attached to the last link.
+    mass_lights (float): Mass of the lights attached to the last link.
+    external_forces (list): External forces acting on the end effector [F_ext_x, F_ext_y, F_ext_z].
+    external_torques (list): External torques acting on each joint [T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5].
+
+    Returns:
+    list: Maximum torques for each joint.
+    """
+    # Define symbolic variables for joint angles, DH parameters, and masses
     theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
         "theta_1 theta_2 theta_3 theta_4 theta_5"
     )
@@ -26,8 +42,8 @@ def compute_torques(
     m1, m2, m3, m4, m5 = sp.symbols("m1 m2 m3 m4 m5")
     g = sp.Matrix([0, 0, -9.81])
 
-    # Helper function to create a transformation matrix from DH parameters
     def dh_matrix(theta, d, a, alpha):
+        """Create a transformation matrix from DH parameters."""
         alpha_rad = sp.rad(alpha)
         return sp.Matrix(
             [
@@ -63,7 +79,6 @@ def compute_torques(
     T5 = T4 * A5
 
     # Extract positions of each link's center of mass
-    # Assume center of mass at the middle of each link for simplicity
     p1 = T1[:3, 3] / 2
     p2 = T2[:3, 3] / 2
     p3 = T3[:3, 3] / 2
@@ -244,7 +259,7 @@ def compute_torques(
         )
 
         ax.plot(positions[:, 0], positions[:, 1], positions[:, 2], "o-", markersize=10)
-        ax.set_title(f"Configuration {i+1}\nTorques: {np.round(torques, 2)}")
+        ax.set_title(f"Configuration {i+1}\nTorques: {np.round(torques, 2)} Nm")
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel("Z")
