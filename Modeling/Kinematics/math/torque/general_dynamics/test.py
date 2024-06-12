@@ -1,147 +1,209 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from itertools import product
-import concurrent.futures
+from joblib import Parallel, delayed
+
+# Define DH parameters
+d1 = 0.1
+d5 = 0.1
+a2 = 0.5
+a3 = 0.5
+alpha = np.deg2rad([90, 0, 0, 90, 0])
 
 
-# DH parameter helper function
+# Helper function to create a transformation matrix from DH parameters
 def dh_matrix(theta, d, a, alpha):
-    alpha_rad = np.radians(alpha)
     return np.array(
         [
             [
                 np.cos(theta),
-                -np.sin(theta) * np.cos(alpha_rad),
-                np.sin(theta) * np.sin(alpha_rad),
+                -np.sin(theta) * np.cos(alpha),
+                np.sin(theta) * np.sin(alpha),
                 a * np.cos(theta),
             ],
             [
                 np.sin(theta),
-                np.cos(theta) * np.cos(alpha_rad),
-                -np.cos(theta) * np.sin(alpha_rad),
+                np.cos(theta) * np.cos(alpha),
+                -np.cos(theta) * np.sin(alpha),
                 a * np.sin(theta),
             ],
-            [0, np.sin(alpha_rad), np.cos(alpha_rad), d],
+            [0, np.sin(alpha), np.cos(alpha), d],
             [0, 0, 0, 1],
         ]
     )
 
 
-# DH parameters
-d_1, d_5 = 0.1, 0.1
-a_2, a_3 = 0.5, 0.5
-alpha = [90, 0, 0, 90, 0]
-masses = [
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0 + 0.5 + 0.5,
-]  # including camera and lights masses in the last link
-g = np.array([0, 0, -9.81])
+# Function to compute the Jacobian matrix
+def compute_jacobian(thetas):
+    theta1, theta2, theta3, theta4, theta5 = thetas
+    A1 = dh_matrix(theta1, d1, 0, alpha[0])
+    A2 = dh_matrix(theta2, 0, a2, alpha[1])
+    A3 = dh_matrix(theta3, 0, a3, alpha[2])
+    A4 = dh_matrix(theta4, 0, 0, alpha[3])
+    A5 = dh_matrix(theta5, d5, 0, alpha[4])
+
+    T = A1 @ A2 @ A3 @ A4 @ A5
+
+    position = T[:3, 3]
+    z0 = np.array([0, 0, 1])
+    z1 = A1[:3, :3] @ z0
+    z2 = (A1 @ A2)[:3, :3] @ z0
+    z3 = (A1 @ A2 @ A3)[:3, :3] @ z0
+    z4 = (A1 @ A2 @ A3 @ A4)[:3, :3] @ z0
+
+    Jv = np.column_stack(
+        [
+            np.cross(z0, position),
+            np.cross(z1, position - A1[:3, 3]),
+            np.cross(z2, position - (A1 @ A2)[:3, 3]),
+            np.cross(z3, position - (A1 @ A2 @ A3)[:3, 3]),
+            np.cross(z4, position - (A1 @ A2 @ A3 @ A4)[:3, 3]),
+        ]
+    )
+
+    Jw = np.column_stack([z0, z1, z2, z3, z4])
+
+    J = np.vstack([Jv, Jw])
+
+    return J
 
 
-# Precompute transformation matrices for given theta values
+# Function to compute the transformation matrices for visualization
 def compute_transforms(thetas):
-    A1 = dh_matrix(thetas[0], d_1, 0, alpha[0])
-    A2 = dh_matrix(thetas[1], 0, a_2, alpha[1])
-    A3 = dh_matrix(thetas[2], 0, a_3, alpha[2])
-    A4 = dh_matrix(thetas[3], 0, 0, alpha[3])
-    A5 = dh_matrix(thetas[4], d_5, 0, alpha[4])
+    theta1, theta2, theta3, theta4, theta5 = thetas
+    A1 = dh_matrix(theta1, d1, 0, alpha[0])
+    A2 = dh_matrix(theta2, 0, a2, alpha[1])
+    A3 = dh_matrix(theta3, 0, a3, alpha[2])
+    A4 = dh_matrix(theta4, 0, 0, alpha[3])
+    A5 = dh_matrix(theta5, d5, 0, alpha[4])
 
     T1 = A1
-    T2 = T1 @ A2
-    T3 = T2 @ A3
-    T4 = T3 @ A4
-    T5 = T4 @ A5
+    T2 = A1 @ A2
+    T3 = A1 @ A2 @ A3
+    T4 = A1 @ A2 @ A3 @ A4
+    T5 = A1 @ A2 @ A3 @ A4 @ A5
 
-    return [T1, T2, T3, T4, T5]
+    return [np.eye(4), T1, T2, T3, T4, T5]
 
 
-# Compute Jacobians for given transformation matrices
-def compute_jacobians(transforms):
-    Jvs = []
+# Function to compute the dynamic torques for a given set of angles, velocities, and accelerations
+def compute_torques_for_combination(
+    combination, masses, mass_camera, mass_lights, external_torques
+):
+    angles, velocities, accelerations = combination
+    g = 9.81
+    J = compute_jacobian(angles)
+    Jv = J[:3, :]
+    Jw = J[3:, :]
+
+    m_total = np.array(masses + [mass_camera + mass_lights])
+    V = np.array(velocities)
+    A = np.array(accelerations)
+
+    # Calculate kinetic energy related torques
+    tau_kinetic = Jv.T @ (m_total[:3] * (Jv @ A)) + Jw.T @ (m_total[:3] * (Jw @ A))
+
+    # Calculate potential energy related torques
+    p = np.array([0, 0, d1]) + Jv @ angles
+    tau_potential = Jv.T @ (m_total[:3] * g * p)
+
+    # Total torques including external forces and torques
+    tau_total = tau_kinetic + tau_potential + np.array(external_torques)
+
+    return np.abs(tau_total), angles
+
+
+# Function to compute the dynamic torques
+def compute_dynamic_torques(
+    masses,
+    mass_camera,
+    mass_lights,
+    external_forces,
+    external_torques,
+    velocity_range,
+    acceleration_range,
+    num_samples=100,
+    num_workers=4,
+):
+    max_torque_per_joint = np.zeros(5)
+    top_configurations = []
+
+    # Generate random samples of joint angles, velocities, and accelerations
+    angle_combinations = np.random.uniform(-np.pi, np.pi, (num_samples, 5))
+    velocity_combinations = np.random.uniform(
+        min(velocity_range), max(velocity_range), (num_samples, 5)
+    )
+    acceleration_combinations = np.random.uniform(
+        min(acceleration_range), max(acceleration_range), (num_samples, 5)
+    )
+
+    # Combine all samples into one array
+    combinations = zip(
+        angle_combinations, velocity_combinations, acceleration_combinations
+    )
+
+    # Use parallel processing to compute torques
+    results = Parallel(n_jobs=num_workers)(
+        delayed(compute_torques_for_combination)(
+            comb, masses, mass_camera, mass_lights, external_torques
+        )
+        for comb in combinations
+    )
+
+    for result, angles in results:
+        if np.any(result > max_torque_per_joint):
+            max_torque_per_joint = np.maximum(max_torque_per_joint, result)
+            top_configurations.append((angles, result))
+
+    # Sort the configurations by the highest torque experienced
+    top_configurations.sort(key=lambda x: np.max(x[1]), reverse=True)
+    top_configurations = top_configurations[:3]  # Get top three configurations
+
+    return max_torque_per_joint, top_configurations
+
+
+# Function to plot the robot configuration in 3D
+def plot_robot(thetas, title):
+    transforms = compute_transforms(thetas)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    xs, ys, zs = [], [], []
     for T in transforms:
-        p = T[:3, 3] / 2
-        Jv = np.zeros((3, 5))
-        for i in range(5):
-            if i == 0:
-                Jv[:, i] = np.cross([0, 0, 1], p)
-            else:
-                Jv[:, i] = np.cross(
-                    transforms[i - 1][:3, 2], p - transforms[i - 1][:3, 3]
-                )
-        Jvs.append(Jv)
-    return Jvs
+        xs.append(T[0, 3])
+        ys.append(T[1, 3])
+        zs.append(T[2, 3])
+
+    ax.plot(xs, ys, zs, "o-", label="Robot Links")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_title(title)
+    ax.legend()
+    plt.show()
 
 
-# Precompute gravity torques
-def compute_gravity_torques(Jvs, masses):
-    gravity_torques = np.zeros(5)
-    for Jv, mass in zip(Jvs, masses):
-        gravity_torques += Jv.T @ (mass * g)
-    return gravity_torques
-
-
-# Precompute Inertia Matrix (M) and Coriolis Matrix (C)
-def compute_inertia_and_coriolis(Jvs, masses, dq):
-    M = np.zeros((5, 5))
-    for Jv, mass in zip(Jvs, masses):
-        M += Jv.T @ Jv * mass
-
-    C = np.zeros((5, 5))
-    for i in range(5):
-        for j in range(5):
-            C[i, j] = 0.5 * sum(
-                (M[i, k] * dq[k] + M[k, j] * dq[k] - M[i, j] * dq[k]) for k in range(5)
-            )
-    return M, C
-
+# Parameters
+masses = [1.0, 1.0, 1.0, 1.0, 1.0]
+mass_camera = 0.5
+mass_lights = 0.5
+external_forces = [0, 0, 0]  # No external forces in this example
+external_torques = [0, 0, 0, 0, 0]  # No external torques in this example
+velocity_range = np.linspace(-1, 1, 3)  # Reduced steps for optimization
+acceleration_range = np.linspace(-2, 2, 3)  # Reduced steps for optimization
 
 # Compute dynamic torques
-def compute_dynamic_torques(thetas, dqs, ddqs, Jvs, gravity_torques, M, C):
-    tau_dynamic = M @ ddqs + C @ dqs + gravity_torques
-    return tau_dynamic
-
-
-# Define numerical values for testing
-angle_range = np.linspace(-np.pi, np.pi, 10)
-velocity_extremes = [-1, 0, 1]
-acceleration_extremes = [-1, 0, 1]
-
-
-# Function to compute torques for a given set of angles, velocities, and accelerations
-def compute_torques_for_combination(combination):
-    angles, velocities, accelerations = combination
-    transforms = compute_transforms(angles)
-    Jvs = compute_jacobians(transforms)
-    gravity_torques = compute_gravity_torques(Jvs, masses)
-    M, C = compute_inertia_and_coriolis(Jvs, masses, velocities)
-    torques = compute_dynamic_torques(
-        angles, velocities, accelerations, Jvs, gravity_torques, M, C
-    )
-    return np.abs(torques)
-
-
-# Create a list of all combinations of angles, velocities, and accelerations
-angle_combinations = list(product(angle_range, repeat=5))
-velocity_combinations = list(product(velocity_extremes, repeat=5))
-acceleration_combinations = list(product(acceleration_extremes, repeat=5))
-
-all_combinations = list(
-    product(angle_combinations, velocity_combinations, acceleration_combinations)
+print("Performing dynamic torque analysis across all configurations...")
+max_torque_per_joint, top_configurations = compute_dynamic_torques(
+    masses,
+    mass_camera,
+    mass_lights,
+    external_forces,
+    external_torques,
+    velocity_range,
+    acceleration_range,
 )
-
-# Initialize the maximum torque tracker
-max_torque_per_joint = np.zeros(5)
-
-# Use concurrent.futures to parallelize the computation
-with concurrent.futures.ProcessPoolExecutor() as executor:
-    results = list(executor.map(compute_torques_for_combination, all_combinations))
-
-# Find the maximum torque for each joint
-for result in results:
-    max_torque_per_joint = np.maximum(max_torque_per_joint, result)
 
 # Plot the maximum torques
 joints = ["Joint 1", "Joint 2", "Joint 3", "Joint 4", "Joint 5"]
@@ -167,5 +229,8 @@ for bar in bars:
 
 plt.show()
 
-# Print the maximum torques
 print(f"Maximum Dynamic Torques for given values: {max_torque_per_joint.tolist()}")
+
+# Plot the top three configurations
+for i, (angles, torques) in enumerate(top_configurations):
+    plot_robot(angles, f"Configuration {i+1} with Torques: {np.round(torques, 2)} Nm")
