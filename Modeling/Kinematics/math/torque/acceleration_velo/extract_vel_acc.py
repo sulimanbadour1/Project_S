@@ -112,39 +112,14 @@ acceleration_symbols = [
     theta_ddot[4],
 ]
 
-v_func = sp.lambdify(joint_symbols + velocity_symbols, v)
-w_func = sp.lambdify(joint_symbols + velocity_symbols, w)
-a_func = sp.lambdify(joint_symbols + velocity_symbols + acceleration_symbols, a)
-alpha_func = sp.lambdify(joint_symbols + velocity_symbols + acceleration_symbols, alpha)
-
-# Numerical evaluation
-joint_values = {
-    theta_1: np.deg2rad(30),
-    theta_2: np.deg2rad(45),
-    theta_3: np.deg2rad(60),
-    theta_4: np.deg2rad(75),
-    theta_5: np.deg2rad(90),
-    d_1: 0.1,
-    d_5: 0.1,
-    a_2: 0.5,
-    a_3: 0.5,
-}
-
-velocity_values = {
-    theta_dot[0]: 1.0,
-    theta_dot[1]: 1.0,
-    theta_dot[2]: 1.0,
-    theta_dot[3]: 1.0,
-    theta_dot[4]: 1.0,
-}
-
-acceleration_values = {
-    theta_ddot[0]: 0.5,
-    theta_ddot[1]: 0.5,
-    theta_ddot[2]: 0.5,
-    theta_ddot[3]: 0.5,
-    theta_ddot[4]: 0.5,
-}
+v_func = sp.lambdify(joint_symbols + velocity_symbols, v, "numpy")
+w_func = sp.lambdify(joint_symbols + velocity_symbols, w, "numpy")
+a_func = sp.lambdify(
+    joint_symbols + velocity_symbols + acceleration_symbols, a, "numpy"
+)
+alpha_func = sp.lambdify(
+    joint_symbols + velocity_symbols + acceleration_symbols, alpha, "numpy"
+)
 
 # Generate a trajectory (example)
 num_points = 100
@@ -193,11 +168,11 @@ for i in range(num_points):
         theta_ddot_5_traj[i],
     ]
 
-    v_numeric = np.array(v_func(*joint_vals, *velocity_vals))
-    w_numeric = np.array(w_func(*joint_vals, *velocity_vals))
-    a_numeric = np.array(a_func(*joint_vals, *velocity_vals, *acceleration_vals))
+    v_numeric = np.array(v_func(*(joint_vals + velocity_vals)))
+    w_numeric = np.array(w_func(*(joint_vals + velocity_vals)))
+    a_numeric = np.array(a_func(*(joint_vals + velocity_vals + acceleration_vals)))
     alpha_numeric = np.array(
-        alpha_func(*joint_vals, *velocity_vals, *acceleration_vals)
+        alpha_func(*(joint_vals + velocity_vals + acceleration_vals))
     )
 
     total_acceleration = np.linalg.norm(a_numeric) + np.linalg.norm(alpha_numeric)
@@ -268,48 +243,60 @@ for i in time_points:
     joint_positions = np.array(
         [
             [0, 0, 0],
-            [0, 0, d_1.evalf()],
+            [0, 0, float(d_1.evalf())],
             [
-                a_2.evalf() * np.cos(theta_1_traj[i]) * np.cos(theta_2_traj[i]),
-                a_2.evalf() * np.sin(theta_1_traj[i]) * np.cos(theta_2_traj[i]),
-                d_1.evalf() + a_2.evalf() * np.sin(theta_2_traj[i]),
+                float(a_2.evalf() * np.cos(theta_1_traj[i]) * np.cos(theta_2_traj[i])),
+                float(a_2.evalf() * np.sin(theta_1_traj[i]) * np.cos(theta_2_traj[i])),
+                float(d_1.evalf() + a_2.evalf() * np.sin(theta_2_traj[i])),
             ],
             [
-                a_2.evalf() * np.cos(theta_1_traj[i]) * np.cos(theta_2_traj[i])
-                + a_3.evalf()
-                * np.cos(theta_1_traj[i])
-                * np.cos(theta_2_traj[i] + theta_3_traj[i]),
-                a_2.evalf() * np.sin(theta_1_traj[i]) * np.cos(theta_2_traj[i])
-                + a_3.evalf()
-                * np.sin(theta_1_traj[i])
-                * np.cos(theta_2_traj[i] + theta_3_traj[i]),
-                d_1.evalf()
-                + a_2.evalf() * np.sin(theta_2_traj[i])
-                + a_3.evalf() * np.sin(theta_2_traj[i] + theta_3_traj[i]),
+                float(
+                    a_2.evalf() * np.cos(theta_1_traj[i]) * np.cos(theta_2_traj[i])
+                    + a_3.evalf()
+                    * np.cos(theta_1_traj[i])
+                    * np.cos(theta_2_traj[i] + theta_3_traj[i])
+                ),
+                float(
+                    a_2.evalf() * np.sin(theta_1_traj[i]) * np.cos(theta_2_traj[i])
+                    + a_3.evalf()
+                    * np.sin(theta_1_traj[i])
+                    * np.cos(theta_2_traj[i] + theta_3_traj[i])
+                ),
+                float(
+                    d_1.evalf()
+                    + a_2.evalf() * np.sin(theta_2_traj[i])
+                    + a_3.evalf() * np.sin(theta_2_traj[i] + theta_3_traj[i])
+                ),
             ],
             [
-                a_2.evalf() * np.cos(theta_1_traj[i]) * np.cos(theta_2_traj[i])
-                + a_3.evalf()
-                * np.cos(theta_1_traj[i])
-                * np.cos(theta_2_traj[i] + theta_3_traj[i])
-                + d_5.evalf()
-                * np.cos(theta_1_traj[i])
-                * np.cos(theta_2_traj[i] + theta_3_traj[i] + theta_4_traj[i]),
-                a_2.evalf() * np.sin(theta_1_traj[i]) * np.cos(theta_2_traj[i])
-                + a_3.evalf()
-                * np.sin(theta_1_traj[i])
-                * np.cos(theta_2_traj[i] + theta_3_traj[i])
-                + d_5.evalf()
-                * np.sin(theta_1_traj[i])
-                * np.cos(theta_2_traj[i] + theta_3_traj[i] + theta_4_traj[i]),
-                d_1.evalf()
-                + a_2.evalf() * np.sin(theta_2_traj[i])
-                + a_3.evalf() * np.sin(theta_2_traj[i] + theta_3_traj[i])
-                + d_5.evalf()
-                * np.sin(theta_2_traj[i] + theta_3_traj[i] + theta_4_traj[i]),
+                float(
+                    a_2.evalf() * np.cos(theta_1_traj[i]) * np.cos(theta_2_traj[i])
+                    + a_3.evalf()
+                    * np.cos(theta_1_traj[i])
+                    * np.cos(theta_2_traj[i] + theta_3_traj[i])
+                    + d_5.evalf()
+                    * np.cos(theta_1_traj[i])
+                    * np.cos(theta_2_traj[i] + theta_3_traj[i] + theta_4_traj[i])
+                ),
+                float(
+                    a_2.evalf() * np.sin(theta_1_traj[i]) * np.cos(theta_2_traj[i])
+                    + a_3.evalf()
+                    * np.sin(theta_1_traj[i])
+                    * np.cos(theta_2_traj[i] + theta_3_traj[i])
+                    + d_5.evalf()
+                    * np.sin(theta_1_traj[i])
+                    * np.cos(theta_2_traj[i] + theta_3_traj[i] + theta_4_traj[i])
+                ),
+                float(
+                    d_1.evalf()
+                    + a_2.evalf() * np.sin(theta_2_traj[i])
+                    + a_3.evalf() * np.sin(theta_2_traj[i] + theta_3_traj[i])
+                    + d_5.evalf()
+                    * np.sin(theta_2_traj[i] + theta_3_traj[i] + theta_4_traj[i])
+                ),
             ],
         ]
-    ).astype(np.float64)
+    )
 
     ax.plot3D(
         joint_positions[:, 0],
