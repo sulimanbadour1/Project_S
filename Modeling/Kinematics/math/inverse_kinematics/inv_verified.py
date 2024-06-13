@@ -88,7 +88,7 @@ class RobotArm:
 
 
 # Example parameters
-Px, Py, Pz = 1, 0, 0
+Px, Py, Pz = 0.5, 0.5, 0
 omega = 0
 
 # Define DH parameters
