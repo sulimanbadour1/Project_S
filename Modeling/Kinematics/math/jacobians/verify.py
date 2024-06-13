@@ -1,130 +1,92 @@
-import sympy as sp
 import numpy as np
 
-# Define symbolic variables for angles and dimensions
-theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
-    "theta_1 theta_2 theta_3 theta_4 theta_5"
-)
-d_1, d_5 = sp.symbols("d_1 d_5")  # d_5 for the last joint
-a_2, a_3 = sp.symbols(
-    "a_2 a_3"
-)  # a_2 and a_3 for the lengths of the second and third links
 
-# Alpha values in degrees, with an updated value for alpha_4
-alpha = [90, 0, 0, 90, 0]
-
-
-# Helper function to create a transformation matrix from DH parameters
 def dh_matrix(theta, d, a, alpha):
-    alpha_rad = sp.rad(alpha)  # Convert alpha from degrees to radians
-    return sp.Matrix(
+    alpha_rad = np.deg2rad(alpha)  # Convert alpha from degrees to radians
+    return np.array(
         [
             [
-                sp.cos(theta),
-                -sp.sin(theta) * sp.cos(alpha_rad),
-                sp.sin(theta) * sp.sin(alpha_rad),
-                a * sp.cos(theta),
+                np.cos(theta),
+                -np.sin(theta) * np.cos(alpha_rad),
+                np.sin(theta) * np.sin(alpha_rad),
+                a * np.cos(theta),
             ],
             [
-                sp.sin(theta),
-                sp.cos(theta) * sp.cos(alpha_rad),
-                -sp.cos(theta) * sp.sin(alpha_rad),
-                a * sp.sin(theta),
+                np.sin(theta),
+                np.cos(theta) * np.cos(alpha_rad),
+                -np.cos(theta) * np.sin(alpha_rad),
+                a * np.sin(theta),
             ],
-            [0, sp.sin(alpha_rad), sp.cos(alpha_rad), d],
+            [0, np.sin(alpha_rad), np.cos(alpha_rad), d],
             [0, 0, 0, 1],
         ]
     )
 
 
-# Create transformation matrices for each joint using the updated parameters
-A1 = dh_matrix(theta_1, d_1, 0, alpha[0])
-A2 = dh_matrix(theta_2, 0, a_2, alpha[1])
-A3 = dh_matrix(theta_3, 0, a_3, alpha[2])
-A4 = dh_matrix(theta_4, 0, 0, alpha[3])  # a_4 is zero
-A5 = dh_matrix(theta_5, d_5, 0, alpha[4])  # a_5 is zero, added d_5
+def compute_jacobians(theta_vals, d1, a2, a3, d5):
+    alpha = [90, 0, 0, 90, 0]
 
-# Compute the overall transformation matrix by multiplying individual matrices
-T = A1 * A2 * A3 * A4 * A5
+    # Create transformation matrices for each joint using the updated parameters
+    A1 = dh_matrix(theta_vals[0], d1, 0, alpha[0])
+    A2 = dh_matrix(theta_vals[1], 0, a2, alpha[1])
+    A3 = dh_matrix(theta_vals[2], 0, a3, alpha[2])
+    A4 = dh_matrix(theta_vals[3], 0, 0, alpha[3])
+    A5 = dh_matrix(theta_vals[4], d5, 0, alpha[4])
 
-# Extract the position of the end effector
-position = T[:3, 3]
+    # Compute the overall transformation matrix by multiplying individual matrices
+    T1 = A1
+    T2 = A1 @ A2
+    T3 = A1 @ A2 @ A3
+    T4 = A1 @ A2 @ A3 @ A4
+    T5 = A1 @ A2 @ A3 @ A4 @ A5
 
-# Define the joint variables in a vector
-joint_vars = sp.Matrix([theta_1, theta_2, theta_3, theta_4, theta_5])
+    # End-effector position
+    position = T5[:3, 3]
 
-# Compute the Jacobian matrix for the position
-J_v = position.jacobian(joint_vars)
+    # Compute the Jacobian matrix for the position
+    J_v = np.zeros((3, 5))
 
-# Extract the z-axis of each transformation matrix (which are the rotation axes)
-z0 = sp.Matrix([0, 0, 1])
-z1 = A1[:3, 2]
-z2 = (A1 * A2)[:3, 2]
-z3 = (A1 * A2 * A3)[:3, 2]
-z4 = (A1 * A2 * A3 * A4)[:3, 2]
+    z0 = np.array([0, 0, 1])
+    z1 = T1[:3, 2]
+    z2 = T2[:3, 2]
+    z3 = T3[:3, 2]
+    z4 = T4[:3, 2]
 
-# Compute the angular part of the Jacobian
-J_w = sp.Matrix.hstack(z0, z1, z2, z3, z4)
+    p0 = np.array([0, 0, 0])
+    p1 = T1[:3, 3]
+    p2 = T2[:3, 3]
+    p3 = T3[:3, 3]
+    p4 = T4[:3, 3]
+    pe = position
 
-# Define twist axes for each joint (screw axes)
-S1 = sp.Matrix([0, 0, 1, 0, 0, 0])
-S2 = sp.Matrix([0, 1, 0, -d_1, 0, 0])
-S3 = sp.Matrix([0, 1, 0, -d_1, 0, a_2])
-S4 = sp.Matrix([0, 1, 0, -d_1, 0, a_2 + a_3])
-S5 = sp.Matrix([0, 0, 1, 0, 0, 0])
+    J_v[:, 0] = np.cross(z0, (pe - p0))
+    J_v[:, 1] = np.cross(z1, (pe - p1))
+    J_v[:, 2] = np.cross(z2, (pe - p2))
+    J_v[:, 3] = np.cross(z3, (pe - p3))
+    J_v[:, 4] = np.cross(z4, (pe - p4))
 
-# Compute the Jacobian matrix for the position using screw axes
-J_v_exp = sp.Matrix.hstack(S1[:3], S2[:3], S3[:3], S4[:3], S5[:3])
+    # Rotation axes for angular part of the Jacobian
+    J_w = np.column_stack((z0, z1, z2, z3, z4))
 
-# Compute the Jacobian matrix for the angular velocity using screw axes
-J_w_exp = sp.Matrix.hstack(S1[3:], S2[3:], S3[3:], S4[3:], S5[3:])
+    # Screw axis Jacobians
+    S1 = np.array([0, 0, 1, 0, 0, 0])
+    S2 = np.array([0, 1, 0, -d1, 0, 0])
+    S3 = np.array([0, 1, 0, -d1, 0, a2])
+    S4 = np.array([0, 1, 0, -d1, 0, a2 + a3])
+    S5 = np.array([0, 0, 1, 0, 0, 0])
 
-# Initialize pretty printing for better output readability
-sp.init_printing(use_unicode=True)
-
-# Display the results
-print("Transformation matrix using DH parameters:")
-sp.pprint(T)
-
-print("\nEnd Effector Position using DH parameters:")
-sp.pprint(position)
-
-print("\nJacobian (Linear Velocity) using DH parameters:")
-sp.pprint(J_v)
-
-print("\nJacobian (Angular Velocity) using DH parameters:")
-sp.pprint(J_w)
-
-print("\nJacobian (Linear Velocity) using screw axis method:")
-sp.pprint(J_v_exp)
-
-print("\nJacobian (Angular Velocity) using screw axis method:")
-sp.pprint(J_w_exp)
-
-
-# Numerical verification
-def numerical_jacobian(theta_vals, a2_val, a3_val, d1_val, d5_val):
-    subs = {
-        theta_1: theta_vals[0],
-        theta_2: theta_vals[1],
-        theta_3: theta_vals[2],
-        theta_4: theta_vals[3],
-        theta_5: theta_vals[4],
-        a_2: a2_val,
-        a_3: a3_val,
-        d_1: d1_val,
-        d_5: d5_val,
-    }
-    J_v_num = J_v.evalf(subs=subs)
-    J_w_num = J_w.evalf(subs=subs)
-    J_v_exp_num = J_v_exp.evalf(subs=subs)
-    J_w_exp_num = J_w_exp.evalf(subs=subs)
-    return (
-        np.array(J_v_num).astype(np.float64),
-        np.array(J_w_num).astype(np.float64),
-        np.array(J_v_exp_num).astype(np.float64),
-        np.array(J_w_exp_num).astype(np.float64),
+    J_v_exp = np.column_stack(
+        (
+            np.cross(S1[:3], pe) + S1[3:],
+            np.cross(S2[:3], pe) + S2[3:],
+            np.cross(S3[:3], pe) + S3[3:],
+            np.cross(S4[:3], pe) + S4[3:],
+            np.cross(S5[:3], pe) + S5[3:],
+        )
     )
+    J_w_exp = np.column_stack((S1[:3], S2[:3], S3[:3], S4[:3], S5[:3]))
+
+    return J_v, J_w, J_v_exp, J_w_exp, position
 
 
 # Example numerical values for joint angles and link dimensions
@@ -135,9 +97,13 @@ d1_val = 0.1
 d5_val = 0.1
 
 # Calculate numerical Jacobians
-J_v_num, J_w_num, J_v_exp_num, J_w_exp_num = numerical_jacobian(
-    theta_vals, a2_val, a3_val, d1_val, d5_val
+J_v_num, J_w_num, J_v_exp_num, J_w_exp_num, position = compute_jacobians(
+    theta_vals, d1_val, a2_val, a3_val, d5_val
 )
+
+print("\nEnd Effector Position:")
+print(position)
+
 print("\nNumerical Jacobian (Linear Velocity) using DH parameters:")
 print(J_v_num)
 
