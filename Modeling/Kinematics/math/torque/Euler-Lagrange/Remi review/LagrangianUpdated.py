@@ -76,15 +76,15 @@ def dynamic_analysis(
 
 
 # Parameters
-m_values = [1.0, 2.0, 1.5, 1.2, 1.8]  # Masses of the segments (kg)
+m_values = [1.0, 1.0, 1.0, 1.0, 2.0]  # Masses of the segments (kg)
 v_ci_values = [0.5, 0.6, 0.55, 0.52, 0.58]  # Linear velocities of the centers of mass (m/s)
-I_ci_values = [0.02, 0.03, 0.025, 0.022, 0.028]  # Moments of inertia about the centers of mass (kg*m^2)
+I_ci_values = [0.1, 0.1, 0.1, 0.1, 0.1]  # Moments of inertia about the centers of mass (kg*m^2)
 omega_values = [1.0, 1.2, 1.1, 1.05, 1.15]  # Angular velocities of the segments (rad/s)
 g = 9.81  # Acceleration due to gravity (m/s^2)
-h_values = [0.2, 0.25, 0.23, 0.22, 0.24]  # Heights of the centers of mass (m)
-q_ddot_values = [0.8, 0.9, 0.85, 0.82, 0.88]  # Accelerations (rad/s^2)
-q_dot_values = [0.5, 0.6, 0.55, 0.52, 0.58]  # Angular velocities (rad/s)
-tau_values = [10, 12, 11, 10.5, 11.5]  # Joint torques (Nm)
+h_values = [0.1, 0.2, 0.3, 0.1, 0.1]  # Heights of the centers of mass (m)
+q_ddot_values = [0.0, 0.0, 0.0, 0.0, 0.0]  # Accelerations (rad/s^2)
+q_dot_values = [0.0, 0.0, 0.0, 0.0, 0.0]  # Angular velocities (rad/s)
+tau_values = [0.0, 0.0, 0.0, 0.0,0.0]  # Joint torques (Nm)
 
 print("Performing dynamic torque analysis across all configurations using Lagrangian formulation...")
 max_torque_per_joint = dynamic_analysis(

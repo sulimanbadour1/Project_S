@@ -25,7 +25,7 @@ def dynamic_analysis_newton_euler(
 
     # Calculate forces and moments for each segment
     forces[4] = m_values[4] * a_values[4]
-    moments[4] = 0.25  # Placeholder value for moments on the fifth segment
+    moments[4] = 0.0  # Placeholder value for moments on the fifth segment
     torques[4] = sp.transpose(z_values[4]) * moments[4]
 
     # Calculation of forces and moments for each segment
@@ -122,10 +122,10 @@ def dynamic_analysis_newton_euler(
 
 
 # Parameters
-m_values = [1.0, 2.0, 1.5, 1.2, 1.8]  # Masses of the segments (kg)
-a_values = [0.1, 0.2, 0.15, 0.12, 0.18]  # Linear accelerations of the center of mass (m/s^2)
+m_values = [1.0, 1.0, 1.0, 1.0, 2.0]  # Masses of the segments (kg)
+a_values = [0.5, 0.5, 0.5, 0.5, 0.5]  # Linear accelerations of the center of mass (m/s^2)
 R_values = [1.0, 1.0, 1.0, 1.0, 1.0]  # Rotation coefficients (unitless)
-d_values = [0.15, 0.2, 0.175, 0.125, 0.15]  # Positions of the center of mass (m)
+d_values = [0.1, 0.5, 0.5, 0.1, 0.1]  # Positions of the center of mass (m)
 
 print("Performing dynamic torque analysis across all configurations using Newton-Euler formulation...")
 max_torque_per_joint = dynamic_analysis_newton_euler(
