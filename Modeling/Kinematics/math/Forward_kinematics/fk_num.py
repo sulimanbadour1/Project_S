@@ -39,10 +39,10 @@ def DH_matrix(theta, d, a, alpha):
 
 # Joint angles in degrees
 theta_in_degrees = {
-    "theta1": 19.4,
-    "theta2": -45.79,
-    "theta3": -54.72,
-    "theta4": 280.51,
+    "theta1": 0,
+    "theta2": 0,
+    "theta3": 0,
+    "theta4": 0,
     "theta5": 0,
 }
 

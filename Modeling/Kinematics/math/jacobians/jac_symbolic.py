@@ -73,4 +73,4 @@ sp.init_printing(use_unicode=True)
 # sp.pprint(Jw)
 
 print("\nFull Jacobian matrix (J):")
-# sp.pprint(J_full)
+sp.pprint(J_full)

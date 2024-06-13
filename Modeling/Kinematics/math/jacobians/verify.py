@@ -112,8 +112,43 @@ def plot_robot(thetas):
     plt.show()
 
 
+# Numerical Jacobian using finite differences
+def numerical_jacobian(thetas, delta=1e-8):
+    num_jacobian = np.zeros((6, len(thetas)))
+    T_original = compute_transforms(thetas)[-1]
+    for i in range(len(thetas)):
+        thetas_perturbed = np.copy(thetas)
+        thetas_perturbed[i] += delta
+        T_perturbed = compute_transforms(thetas_perturbed)[-1]
+
+        # Compute position and orientation difference
+        position_diff = (T_perturbed[:3, 3] - T_original[:3, 3]) / delta
+        R_diff = (T_perturbed[:3, :3] - T_original[:3, :3]) / delta
+
+        # Angular velocity vector from skew-symmetric matrix
+        w_x = (R_diff[2, 1] - R_diff[1, 2]) / 2.0
+        w_y = (R_diff[0, 2] - R_diff[2, 0]) / 2.0
+        w_z = (R_diff[1, 0] - R_diff[0, 1]) / 2.0
+        angular_velocity = np.array([w_x, w_y, w_z])
+
+        num_jacobian[:, i] = np.hstack((position_diff, angular_velocity))
+
+    return num_jacobian
+
+
+# Verify the end-effector position and orientation
+def forward_kinematics(thetas):
+    A1 = dh_matrix(thetas[0], d1, 0, alpha[0])
+    A2 = dh_matrix(thetas[1], 0, a2, alpha[1])
+    A3 = dh_matrix(thetas[2], 0, a3, alpha[2])
+    A4 = dh_matrix(thetas[3], 0, 0, alpha[3])
+    A5 = dh_matrix(thetas[4], d5, 0, alpha[4])
+    T = A1 @ A2 @ A3 @ A4 @ A5
+    return T
+
+
 # Specific configuration to check (angles in degrees)
-theta_values_deg = [0, 30, 0, 0, 0]
+theta_values_deg = [0, 0, 0, 0, 0]
 theta_values_rad = np.deg2rad(theta_values_deg)
 
 # Compute the Jacobian for the specific configuration
@@ -134,3 +169,26 @@ print(f"\nIs the configuration singular? {'Yes' if is_singular else 'No'}")
 
 # Plot the robot configuration
 plot_robot(theta_values_rad)
+
+# Compute numerical Jacobian for the specific configuration
+numerical_J = numerical_jacobian(theta_values_rad, delta=1e-8)  # Adjusted delta
+
+# Compare numerical Jacobian with analytical Jacobian
+print("\nNumerical Jacobian matrix:")
+print(numerical_J)
+print("\nAnalytical Jacobian matrix:")
+print(J)
+print("\nDifference between Numerical and Analytical Jacobian:")
+difference = numerical_J - J
+print(difference)
+
+# Verify the end-effector position and orientation from forward kinematics
+T = forward_kinematics(theta_values_rad)
+print("\nEnd-effector position and orientation from forward kinematics:")
+print(T)
+
+# Check the maximum absolute difference
+max_diff = np.max(np.abs(difference))
+print(
+    f"\nMaximum absolute difference between Numerical and Analytical Jacobians: {max_diff}"
+)
