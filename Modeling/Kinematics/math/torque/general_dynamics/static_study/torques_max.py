@@ -159,8 +159,8 @@ inertias = [
     [0.1, 0.1, 0.1],
 ]
 # Add mass for camera and lights at the end effector
-mass_camera = 0
-mass_lights = 0
+mass_camera = 0.5
+mass_lights = 0.5
 masses[-1] += mass_camera + mass_lights  # Add to the last mass (end effector)
 
 external_forces = [0, 0, 0, 0, 0, 0]  # No external forces/moments

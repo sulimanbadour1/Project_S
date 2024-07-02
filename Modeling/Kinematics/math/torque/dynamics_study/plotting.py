@@ -153,7 +153,7 @@ inertias = [
 ]
 angles_set = [
     [0, 0, 0, 0, 0],
-    [np.radians(30), np.radians(45), np.radians(60), np.radians(90), np.radians(120)],
+    [np.radians(30), np.radians(45), np.radians(60), np.radians(0), np.radians(0)],
 ]
 velocities_set = [[0, 0, 0, 0, 0], [1, 1, 1, 1, 1]]
 accelerations_set = [[0, 0, 0, 0, 0], [0.1, 0.1, 0.1, 0.1, 0.1]]
