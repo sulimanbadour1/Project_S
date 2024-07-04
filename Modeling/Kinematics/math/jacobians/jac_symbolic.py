@@ -66,11 +66,12 @@ J_full = sp.Matrix.vstack(Jv, Jw)
 sp.init_printing(use_unicode=True)
 
 # Print the Jacobians
-# print("Jacobian for linear velocity (Jv):")
-# sp.pprint(Jv)
+print("Jacobian for linear velocity (Jv):")
+sp.pprint(Jv)
 
-# print("\nJacobian for angular velocity (Jw):")
-# sp.pprint(Jw)
+
+print("\nJacobian for angular velocity (Jw):")
+sp.pprint(Jw)
 
 print("\nFull Jacobian matrix (J):")
 sp.pprint(J_full)
