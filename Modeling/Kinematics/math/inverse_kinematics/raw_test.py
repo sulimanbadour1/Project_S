@@ -126,7 +126,7 @@ def plot_robot(joint_positions):
 
 
 # Example parameters
-Px, Py, Pz = 0.5, 0, 0.5
+Px, Py, Pz = 1, 0, 0
 omega = -90
 theta1, theta2, theta3, theta4 = inverse_kinematics(Px, Py, Pz, d1, a2, a3, d5, omega)
 print(f"Theta1: {theta1} degrees")

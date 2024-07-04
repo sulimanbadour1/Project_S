@@ -1,7 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from sympy import symbols, cos, sin, pi, Matrix, N
+import matplotlib.pyplot as plt
+import math
 
 # Define symbolic variables
 theta1, theta2, theta3, theta4, theta5 = symbols("theta1 theta2 theta3 theta4 theta5")
@@ -36,9 +36,17 @@ def DH_matrix(theta, d, a, alpha):
     )
 
 
-# Define joint angles in radians
+# Joint angles in degrees
+theta_in_degrees = {
+    "theta1": 90,
+    "theta2": 10,
+    "theta3": 20,
+    "theta4": 0,
+    "theta5": 0,
+}
 
-angles = {theta1: 0, theta2: 1.75, theta3: -1.94, theta4: 1.75, theta5: 0}
+# Convert angles to radians
+angles = {key: math.radians(value) for key, value in theta_in_degrees.items()}
 
 # Compute transformation matrices
 T1 = DH_matrix(theta1, d1, a1, alpha1).subs(angles)
@@ -65,11 +73,9 @@ positions = [
 ]
 positions = [N(p) for p in positions]  # Evaluate numerically
 
-
-# Print the end effector position
-end_effector_position = positions[-1]
-print(f"End Effector Position: {end_effector_position}")
-
+# Calculate omega (pitch angle) from the final orientation matrix
+R05 = T05[:3, :3]
+omega = math.degrees(math.atan2(R05[2, 0], R05[2, 2]))
 
 # Plotting
 fig = plt.figure()
@@ -94,10 +100,19 @@ z_vals = [p[2] for p in positions]
 ax2.plot(x_vals, y_vals, z_vals, "ro-")
 ax2.plot(x_vals[0], y_vals[0], z_vals[0], "go")  # Base in green
 ax2.plot(x_vals[-1], y_vals[-1], z_vals[-1], "mo")  # End effector in magenta
+
+# Annotate omega
+ax2.text(x_vals[-1], y_vals[-1], z_vals[-1], f"ω = {omega:.2f}°", color="blue")
+
 ax2.set_title("3D View")
 ax2.set_xlabel("X")
 ax2.set_ylabel("Y")
 ax2.set_zlabel("Z")
 ax2.legend(["Path", "Base", "End Effector"])
+
+print(f"End effector position: {positions[-1]}")
+print("\n")
+# print(f"End effector orientation: {T05[:3, :3]}")
+print(f"Pitch angle omega: {omega} degrees")
 
 plt.show()

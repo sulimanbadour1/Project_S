@@ -88,7 +88,7 @@ class RobotArm:
 
 
 # Example parameters
-Px, Py, Pz = 0.5, 0.5, 0
+Px, Py, Pz = 0.5, 0, 0.5
 omega = 0
 
 # Define DH parameters
@@ -109,3 +109,14 @@ print(f"Theta3: {theta3:.2f} degrees")
 print(f"Theta4: {theta4:.2f} degrees")
 print(f"Joint positions: {joint_positions}")
 print(f"End effector position: {joint_positions[-1]}")
+
+
+# convert to radians
+theta1 = math.radians(theta1)
+theta2 = math.radians(theta2)
+theta3 = math.radians(theta3)
+theta4 = math.radians(theta4)
+
+print(
+    f"Theta1: {theta1:.2f} radians, Theta2: {theta2:.2f} radians, Theta3: {theta3:.2f} radians, Theta4: {theta4:.2f} radians"
+)

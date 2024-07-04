@@ -62,6 +62,8 @@ def forward_kinematics(d1, a2, a3, d5, theta1, theta2, theta3, theta4):
 
     omega = 90 - (theta2 + theta3 + theta4)
     print(f"Omega: {omega} degrees from the forward kinematics function\n")
+    omega = -omega
+    print(f"Omega: {omega} degrees from the forward kinematics function\n")
 
     # Joint positions
     x0, y0, z0 = 0, 0, 0
