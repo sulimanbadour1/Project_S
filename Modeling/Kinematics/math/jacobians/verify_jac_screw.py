@@ -111,6 +111,12 @@ J_screw = sp.Matrix.vstack(J_v_screw, J_w)
 print("\nScrew Axis Jacobian matrix:")
 sp.pprint(J_screw)
 
+# check the size of the Jacobian matrices
+print("\nSize of Jacobian matrix:")
+print(J.shape)
+print(J_screw.shape)
+
+
 # Check if both Jacobians are equal
 print("\nAre both Jacobians equal?")
 print(J.equals(J_screw))
