@@ -92,7 +92,7 @@ def compute_torques(
     Jv4 = p4.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv5 = p5.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
 
-    # Compute the gravity vector for each link (assuming center of mass at the link origin)
+    # Compute the gravity vector for each link
     G1 = m1 * g
     G2 = m2 * g
     G3 = m3 * g

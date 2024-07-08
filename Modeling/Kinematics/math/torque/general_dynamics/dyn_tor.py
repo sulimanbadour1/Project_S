@@ -2,62 +2,58 @@ import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
-from multiprocessing import Pool
+import multiprocessing as mp
 
 
-# Define the computation function for dynamic torques
-def compute_dynamic_torques(
+def compute_dynamics(
     d_1_val,
     d_5_val,
     a_2_val,
     a_3_val,
     masses,
-    inertias,
     mass_camera,
     mass_lights,
     external_forces,
     external_torques,
-    q_ddot_val,  # Joint accelerations
-    q_dot_val,  # Joint velocities
 ):
-    # Define symbolic variables for joint angles, velocities, and accelerations
+    """
+    Compute the dynamic torques for a robotic arm across all configurations.
+
+    Parameters:
+    d_1_val (float): DH parameter d_1.
+    d_5_val (float): DH parameter d_5.
+    a_2_val (float): DH parameter a_2.
+    a_3_val (float): DH parameter a_3.
+    masses (list): List of masses for each link.
+    mass_camera (float): Mass of the camera attached to the last link.
+    mass_lights (float): Mass of the lights attached to the last link.
+    external_forces (list): External forces acting on the end effector [F_ext_x, F_ext_y, F_ext_z].
+    external_torques (list): External torques acting on each joint [T_ext_1, T_ext_2, T_ext_3, T_ext_4, T_ext_5].
+
+    Returns:
+    list: Dynamic torques for each joint across all configurations.
+    """
+    # Define symbolic variables for joint angles, velocities, accelerations, DH parameters, and masses
     theta_1, theta_2, theta_3, theta_4, theta_5 = sp.symbols(
         "theta_1 theta_2 theta_3 theta_4 theta_5"
     )
-    theta_dot_1, theta_dot_2, theta_dot_3, theta_dot_4, theta_dot_5 = sp.symbols(
-        "theta_dot_1 theta_dot_2 theta_dot_3 theta_dot_4 theta_dot_5"
+    dtheta_1, dtheta_2, dtheta_3, dtheta_4, dtheta_5 = sp.symbols(
+        "dtheta_1 dtheta_2 dtheta_3 dtheta_4 dtheta_5"
     )
-    theta_ddot_1, theta_ddot_2, theta_ddot_3, theta_ddot_4, theta_ddot_5 = sp.symbols(
-        "theta_ddot_1 theta_ddot_2 theta_ddot_3 theta_ddot_4 theta_ddot_5"
+    ddtheta_1, ddtheta_2, ddtheta_3, ddtheta_4, ddtheta_5 = sp.symbols(
+        "ddtheta_1 ddtheta_2 ddtheta_3 ddtheta_4 ddtheta_5"
     )
-
     d_1, d_5 = sp.symbols("d_1 d_5")
     a_2, a_3 = sp.symbols("a_2 a_3")
     alpha = [90, 0, 0, 90, 0]
     m1, m2, m3, m4, m5 = sp.symbols("m1 m2 m3 m4 m5")
     g = sp.Matrix([0, 0, -9.81])
-
-    # Define inertia matrices (assuming simple diagonal form for simplicity)
-    I1_xx, I1_yy, I1_zz = sp.symbols("I1_xx I1_yy I1_zz")
-    I2_xx, I2_yy, I2_zz = sp.symbols("I2_xx I2_yy I2_zz")
-    I3_xx, I3_yy, I3_zz = sp.symbols("I3_xx I3_yy I3_zz")
-    I4_xx, I4_yy, I4_zz = sp.symbols("I4_xx I4_yy I4_zz")
-    I5_xx, I5_yy, I5_zz = sp.symbols("I5_xx I5_yy I5_zz")
-
-    I1 = sp.diag(I1_xx, I1_yy, I1_zz)
-    I2 = sp.diag(I2_xx, I2_yy, I2_zz)
-    I3 = sp.diag(I3_xx, I3_yy, I3_zz)
-    I4 = sp.diag(I4_xx, I4_yy, I4_zz)
-    I5 = sp.diag(I5_xx, I5_yy, I5_zz)
-
     q = sp.Matrix([theta_1, theta_2, theta_3, theta_4, theta_5])
-    q_dot = sp.Matrix([theta_dot_1, theta_dot_2, theta_dot_3, theta_dot_4, theta_dot_5])
-    q_ddot = sp.Matrix(
-        [theta_ddot_1, theta_ddot_2, theta_ddot_3, theta_ddot_4, theta_ddot_5]
-    )
+    dq = sp.Matrix([dtheta_1, dtheta_2, dtheta_3, dtheta_4, dtheta_5])
+    ddq = sp.Matrix([ddtheta_1, ddtheta_2, ddtheta_3, ddtheta_4, ddtheta_5])
 
-    # Helper function to create a transformation matrix from DH parameters
     def dh_matrix(theta, d, a, alpha):
+        """Create a transformation matrix from DH parameters."""
         alpha_rad = sp.rad(alpha)
         return sp.Matrix(
             [
@@ -92,36 +88,75 @@ def compute_dynamic_torques(
     T4 = T3 * A4
     T5 = T4 * A5
 
-    # Extract positions of each link's center of mass
-    # Assume center of mass at the middle of each link for simplicity
-    p1 = T1[:3, 3] / 2
-    p2 = T2[:3, 3] / 2
-    p3 = T3[:3, 3] / 2
-    p4 = T4[:3, 3] / 2
-    p5 = T5[:3, 3] / 2
+    # Compute the Jacobians for each link
+    p1 = T1[:3, 3]
+    p2 = T2[:3, 3]
+    p3 = T3[:3, 3]
+    p4 = T4[:3, 3]
+    p5 = T5[:3, 3]
 
-    # Compute the Jacobians for each center of mass
     Jv1 = p1.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv2 = p2.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv3 = p3.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv4 = p4.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
     Jv5 = p5.jacobian([theta_1, theta_2, theta_3, theta_4, theta_5])
 
-    # Compute the gravity vector for each link (assuming center of mass at the link origin)
-    G1 = m1 * g
-    G2 = m2 * g
-    G3 = m3 * g
-    G4 = m4 * g
-    G5 = (
-        m5 + mass_camera + mass_lights
-    ) * g  # Adding camera and lights masses to the last link
+    Jw1 = sp.Matrix.hstack(
+        sp.zeros(3, 1), T1[:3, :3] * sp.Matrix([[0], [0], [1]]), sp.zeros(3, 3)
+    )
+    Jw2 = sp.Matrix.hstack(
+        sp.zeros(3, 2), T2[:3, :3] * sp.Matrix([[0], [0], [1]]), sp.zeros(3, 2)
+    )
+    Jw3 = sp.Matrix.hstack(
+        sp.zeros(3, 3), T3[:3, :3] * sp.Matrix([[0], [0], [1]]), sp.zeros(3, 1)
+    )
+    Jw4 = sp.Matrix.hstack(sp.zeros(3, 4), T4[:3, :3] * sp.Matrix([[0], [0], [1]]))
+    Jw5 = sp.Matrix.hstack(sp.zeros(3, 5))
 
-    # Compute the torques due to gravity for each link
-    tau_g1 = Jv1.T * G1
-    tau_g2 = Jv2.T * G2
-    tau_g3 = Jv3.T * G3
-    tau_g4 = Jv4.T * G4
-    tau_g5 = Jv5.T * G5
+    # Compute the inertia matrix
+    I1 = sp.eye(3) * (1 / 12) * m1 * (d_1**2)
+    I2 = sp.eye(3) * (1 / 12) * m2 * (a_2**2)
+    I3 = sp.eye(3) * (1 / 12) * m3 * (a_3**2)
+    I4 = sp.eye(3) * (1 / 12) * m4 * (d_1**2)
+    I5 = sp.eye(3) * (1 / 12) * (m5 + mass_camera + mass_lights) * (d_5**2)
+
+    M = (
+        Jv1.T * m1 * Jv1
+        + Jw1.T * I1 * Jw1
+        + Jv2.T * m2 * Jv2
+        + Jw2.T * I2 * Jw2
+        + Jv3.T * m3 * Jv3
+        + Jw3.T * I3 * Jw3
+        + Jv4.T * m4 * Jv4
+        + Jw4.T * I4 * Jw4
+        + Jv5.T * (m5 + mass_camera + mass_lights) * Jv5
+        + Jw5.T * I5 * Jw5
+    )
+
+    # Compute the Coriolis and centrifugal forces
+    C = sp.zeros(5, 5)
+    for k in range(5):
+        for j in range(5):
+            C[k, j] = 0
+            for i in range(5):
+                C[k, j] += (
+                    0.5
+                    * (
+                        sp.diff(M[k, j], q[i])
+                        + sp.diff(M[k, i], q[j])
+                        - sp.diff(M[i, j], q[k])
+                    )
+                    * dq[i]
+                )
+
+    # Compute the gravity vector
+    G = (
+        Jv1.T * m1 * g
+        + Jv2.T * m2 * g
+        + Jv3.T * m3 * g
+        + Jv4.T * m4 * g
+        + Jv5.T * (m5 + mass_camera + mass_lights) * g
+    )
 
     # Define symbolic variables for external forces and torques
     F_ext_x, F_ext_y, F_ext_z = sp.symbols("F_ext_x F_ext_y F_ext_z")
@@ -139,38 +174,11 @@ def compute_dynamic_torques(
     tau_ext_forces = Jv_ext.T * F_ext
     tau_ext = tau_ext_forces + T_ext
 
-    # Compute the inertia matrix M(theta)
-    M = (
-        m1 * Jv1.T * Jv1
-        + Jv1.T * I1 * Jv1
-        + m2 * Jv2.T * Jv2
-        + Jv2.T * I2 * Jv2
-        + m3 * Jv3.T * Jv3
-        + Jv3.T * I3 * Jv3
-        + m4 * Jv4.T * Jv4
-        + Jv4.T * I4 * Jv4
-        + (m5 + mass_camera + mass_lights) * Jv5.T * Jv5
-        + Jv5.T * I5 * Jv5
-    )
-
-    # Compute the Coriolis and centrifugal matrix C(theta, theta_dot)
-    C = sp.zeros(5, 5)
-    for i in range(5):
-        for j in range(5):
-            for k in range(5):
-                C[i, j] += (
-                    (M[i, j].diff(q[k]) + M[i, k].diff(q[j]) - M[j, k].diff(q[i]))
-                    * q_dot[k]
-                    / 2
-                )
-
-    # Sum the torques due to gravity, inertia, Coriolis/centrifugal, and external forces/torques
-    tau_total = (
-        M * q_ddot + C * q_dot + tau_g1 + tau_g2 + tau_g3 + tau_g4 + tau_g5 + tau_ext
-    )
+    # Compute the total torques
+    tau = M * ddq + C * dq + G - Jv_ext.T * F_ext + T_ext
 
     # Simplify the total torques
-    tau_total_simplified = sp.simplify(tau_total)
+    tau_simplified = sp.simplify(tau)
 
     # Provide numerical values for testing
     values = {
@@ -183,21 +191,6 @@ def compute_dynamic_torques(
         m3: masses[2],
         m4: masses[3],
         m5: masses[4],
-        I1_xx: inertias[0][0],
-        I1_yy: inertias[0][1],
-        I1_zz: inertias[0][2],
-        I2_xx: inertias[1][0],
-        I2_yy: inertias[1][1],
-        I2_zz: inertias[1][2],
-        I3_xx: inertias[2][0],
-        I3_yy: inertias[2][1],
-        I3_zz: inertias[2][2],
-        I4_xx: inertias[3][0],
-        I4_yy: inertias[3][1],
-        I4_zz: inertias[3][2],
-        I5_xx: inertias[4][0],
-        I5_yy: inertias[4][1],
-        I5_zz: inertias[4][2],
         F_ext_x: external_forces[0],
         F_ext_y: external_forces[1],
         F_ext_z: external_forces[2],
@@ -206,69 +199,160 @@ def compute_dynamic_torques(
         T_ext_3: external_torques[2],
         T_ext_4: external_torques[3],
         T_ext_5: external_torques[4],
-        theta_dot_1: q_dot_val[0],
-        theta_dot_2: q_dot_val[1],
-        theta_dot_3: q_dot_val[2],
-        theta_dot_4: q_dot_val[3],
-        theta_dot_5: q_dot_val[4],
-        theta_ddot_1: q_ddot_val[0],
-        theta_ddot_2: q_ddot_val[1],
-        theta_ddot_3: q_ddot_val[2],
-        theta_ddot_4: q_ddot_val[3],
-        theta_ddot_5: q_ddot_val[4],
+        dtheta_1: 0,
+        dtheta_2: 0,
+        dtheta_3: 0,
+        dtheta_4: 0,
+        dtheta_5: 0,  # For static analysis
+        ddtheta_1: 0,
+        ddtheta_2: 0,
+        ddtheta_3: 0,
+        ddtheta_4: 0,
+        ddtheta_5: 0,  # For static analysis
     }
 
-    # Define the range for joint angles
-    angle_range = np.linspace(-np.pi, np.pi, 5)  # Reduced to 5 steps from -π to π
+    # Initialize the maximum torque tracker and store configurations
+    max_torque_per_joint = np.zeros(5)
+    top_configurations = []
+
+    # Define the range for joint angles with fewer steps
+    angle_range = np.linspace(-np.pi, np.pi, 5)  # 5 steps from -π to π
 
     # Generate all combinations of joint angles
     angle_combinations = list(product(angle_range, repeat=5))
 
     # Precompute torque function
-    tau_total_func = sp.lambdify(
-        (theta_1, theta_2, theta_3, theta_4, theta_5),
-        tau_total_simplified.subs(values),
+    tau_func = sp.lambdify(
+        (
+            theta_1,
+            theta_2,
+            theta_3,
+            theta_4,
+            theta_5,
+            dtheta_1,
+            dtheta_2,
+            dtheta_3,
+            dtheta_4,
+            dtheta_5,
+            ddtheta_1,
+            ddtheta_2,
+            ddtheta_3,
+            ddtheta_4,
+            ddtheta_5,
+        ),
+        tau_simplified.subs(values),
         "numpy",
     )
 
-    # Function to compute the maximum torque for a given angle combination
-    def compute_max_torque(angles):
-        numerical_torques = np.array(tau_total_func(*angles), dtype=float).flatten()
+    def evaluate_torques(angles):
+        numerical_torques = np.array(
+            tau_func(*angles, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), dtype=float
+        ).flatten()
         return np.abs(numerical_torques)
 
-    # Use multiprocessing to compute the maximum torques in parallel
-    with Pool() as pool:
-        results = pool.map(compute_max_torque, angle_combinations)
+    # Using multiprocessing to parallelize the computation
+    if __name__ == "__main__":
+        with mp.Pool(processes=mp.cpu_count()) as pool:
+            results = pool.map(evaluate_torques, angle_combinations)
 
-    max_torque_per_joint = np.max(results, axis=0)
+        max_torque_per_joint = np.max(results, axis=0)
+        top_configurations = sorted(
+            zip(angle_combinations, results), key=lambda x: np.max(x[1]), reverse=True
+        )[:3]
 
-    # Plot the maximum torques
-    joints = ["Joint 1", "Joint 2", "Joint 3", "Joint 4", "Joint 5"]
+        # Plot the maximum torques
+        joints = ["Joint 1", "Joint 2", "Joint 3", "Joint 4", "Joint 5"]
 
-    plt.figure(figsize=(10, 6))
-    bars = plt.bar(joints, max_torque_per_joint.tolist(), color="blue")
-    plt.xlabel("Joints")
-    plt.ylabel("Maximum Torque (Nm)")
-    plt.title("Maximum Dynamic Torque on Each Joint Across All Configurations")
-    plt.grid(True, linestyle="--", alpha=0.6)
+        plt.figure(figsize=(10, 6))
+        bars = plt.bar(joints, max_torque_per_joint.tolist(), color="blue")
+        plt.xlabel("Joints")
+        plt.ylabel("Maximum Torque (Nm)")
+        plt.title("Maximum Dynamic Torque on Each Joint Across All Configurations")
+        plt.grid(True, linestyle="--", alpha=0.6)
 
-    # Annotate bars with their values
-    for bar in bars:
-        yval = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2,
-            yval,
-            f"{yval:.2f}",
-            va="bottom" if yval < 0 else "top",
-            ha="center",
-            color="black",
+        # Annotate bars with their values
+        for bar in bars:
+            yval = bar.get_height()
+            plt.text(
+                bar.get_x() + bar.get_width() / 2,
+                yval,
+                f"{yval:.2f}",
+                va="bottom" if yval < 0 else "top",
+                ha="center",
+                color="black",
+            )
+
+        plt.show()
+
+        # Print the maximum torques
+        print(
+            f"Maximum Dynamic Torques for given values: {max_torque_per_joint.tolist()}"
         )
 
-    plt.show()
+        # Plot the top three configurations
+        fig = plt.figure(figsize=(15, 10))
+        for i, (angles, torques) in enumerate(top_configurations):
+            ax = fig.add_subplot(1, 3, i + 1, projection="3d")
 
-    # Print the maximum torques
-    print(f"Maximum Torques for given values: {max_torque_per_joint.tolist()}")
-    return max_torque_per_joint.tolist()
+            # Evaluate transformation matrices
+            T1_eval = np.array(T1.subs(values).subs({theta_1: angles[0]})).astype(
+                np.float64
+            )
+            T2_eval = np.array(
+                T2.subs(values).subs({theta_1: angles[0], theta_2: angles[1]})
+            ).astype(np.float64)
+            T3_eval = np.array(
+                T3.subs(values).subs(
+                    {theta_1: angles[0], theta_2: angles[1], theta_3: angles[2]}
+                )
+            ).astype(np.float64)
+            T4_eval = np.array(
+                T4.subs(values).subs(
+                    {
+                        theta_1: angles[0],
+                        theta_2: angles[1],
+                        theta_3: angles[2],
+                        theta_4: angles[3],
+                    }
+                )
+            ).astype(np.float64)
+            T5_eval = np.array(
+                T5.subs(values).subs(
+                    {
+                        theta_1: angles[0],
+                        theta_2: angles[1],
+                        theta_3: angles[2],
+                        theta_4: angles[3],
+                        theta_5: angles[4],
+                    }
+                )
+            ).astype(np.float64)
+
+            positions = np.vstack(
+                [
+                    np.array([0, 0, 0]),
+                    T1_eval[:3, 3],
+                    T2_eval[:3, 3],
+                    T3_eval[:3, 3],
+                    T4_eval[:3, 3],
+                    T5_eval[:3, 3],
+                ]
+            )
+
+            ax.plot(
+                positions[:, 0], positions[:, 1], positions[:, 2], "o-", markersize=10
+            )
+            ax.set_title(f"Configuration {i+1}\nTorques: {np.round(torques, 2)} Nm")
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+            ax.set_xlim([-1, 1])
+            ax.set_ylim([-1, 1])
+            ax.set_zlim([0, 1])
+
+        plt.show()
+
+        return max_torque_per_joint.tolist()
 
 
 # Experiment with different values
@@ -277,35 +361,23 @@ d_5_val = 0.1
 a_2_val = 0.5
 a_3_val = 0.5
 masses = [1.0, 1.0, 1.0, 1.0, 1.0]
-inertias = [
-    [0.1, 0.1, 0.1],
-    [0.1, 0.1, 0.1],
-    [0.1, 0.1, 0.1],
-    [0.1, 0.1, 0.1],
-    [0.1, 0.1, 0.1],
-]
 mass_camera = 0.5
 mass_lights = 0.5
 external_forces = [0, 0, 0]  # No external forces in this example
 external_torques = [0, 0, 0, 0, 0]  # No external torques in this example
-q_ddot_val = [1, 1, 1, 1, 1]  # Example accelerations
-q_dot_val = [1, 1, 1, 1, 1]  # Example velocities
 
 # Note: This is a dynamic analysis
 print("Performing dynamic torque analysis across all configurations...")
-max_torque_per_joint = compute_dynamic_torques(
+max_torque_per_joint = compute_dynamics(
     d_1_val,
     d_5_val,
     a_2_val,
     a_3_val,
     masses,
-    inertias,
     mass_camera,
     mass_lights,
     external_forces,
     external_torques,
-    q_ddot_val,
-    q_dot_val,
 )
 
-print(f"Maximum Torques for given values: {max_torque_per_joint}")
+print(f"Maximum Dynamic Torques for given values: {max_torque_per_joint}")
