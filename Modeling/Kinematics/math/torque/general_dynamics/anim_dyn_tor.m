@@ -148,65 +148,74 @@ end
 delete(gcp);  % Shut down the parallel pool
 
 % Find configurations for maximum torques
-[max_torque_values, max_idx] = max(configurations(:, 6:end), [], 1);
-max_configs = configurations(max_idx, 1:5);
+[sorted_torque_values, sorted_idx] = sort(max(configurations(:, 6:end), [], 2), 'descend');
+top_configs = configurations(sorted_idx(1:3), :);
 
-% Plot the maximum torques
+% Plot the joint angles for the top three configurations
 figure;
-subplot(1, 2, 1);
-bar(max_torque_values);
-xlabel('Joints');
-ylabel('Torque (Nm)');
-title('Maximum Dynamic Torques on Each Joint');
-grid on;
+for i = 1:3
+    subplot(3, 3, 3*i-2);
+    bar(top_configs(i, 1:5));
+    xlabel('Joints');
+    ylabel('Angle (radians)');
+    title(['Top Config ', num2str(i)]);
+    grid on;
+end
 
-% Print maximum torques
-disp('Maximum Dynamic Torques for given values:');
-disp(max_torque_values);
+% Plot the robot configurations for the top three configurations
+for i = 1:3
+    subplot(3, 3, 3*i-1);
+    hold on;
+    t1 = top_configs(i, 1);
+    t2 = top_configs(i, 2);
+    t3 = top_configs(i, 3);
+    t4 = top_configs(i, 4);
+    t5 = top_configs(i, 5);
 
-% Plot robot configurations for maximum torques
-figure;
-hold on;
-for i = 1:5
-    T1_num = double(subs(A1, theta1, max_configs(i, 1)));
-    T2_num = double(subs(T2, [theta1, theta2], max_configs(i, 1:2)));
-    T3_num = double(subs(T3, [theta1, theta2, theta3], max_configs(i, 1:3)));
-    T4_num = double(subs(T4, [theta1, theta2, theta3, theta4], max_configs(i, 1:4)));
-    T5_num = double(subs(T5, [theta1, theta2, theta3, theta4, theta5], max_configs(i, 1:5)));
-    
+    % Compute transformation matrices for current joint angles
+    T1_num = double(subs(A1, theta1, t1));
+    T2_num = double(subs(T2, [theta1, theta2], [t1, t2]));
+    T3_num = double(subs(T3, [theta1, theta2, theta3], [t1, t2, t3]));
+    T4_num = double(subs(T4, [theta1, theta2, theta3, theta4], [t1, t2, t3, t4]));
+    T5_num = double(subs(T5, [theta1, theta2, theta3, theta4, theta5], [t1, t2, t3, t4, t5]));
+
+    % Plot the robot configuration
     plot3([0, T1_num(1, 4)], [0, T1_num(2, 4)], [0, T1_num(3, 4)], 'r', 'LineWidth', 2);
     plot3([T1_num(1, 4), T2_num(1, 4)], [T1_num(2, 4), T2_num(2, 4)], [T1_num(3, 4), T2_num(3, 4)], 'g', 'LineWidth', 2);
     plot3([T2_num(1, 4), T3_num(1, 4)], [T2_num(2, 4), T3_num(2, 4)], [T2_num(3, 4), T3_num(3, 4)], 'b', 'LineWidth', 2);
     plot3([T3_num(1, 4), T4_num(1, 4)], [T3_num(2, 4), T4_num(2, 4)], [T3_num(3, 4), T4_num(3, 4)], 'c', 'LineWidth', 2);
     plot3([T4_num(1, 4), T5_num(1, 4)], [T4_num(2, 4), T5_num(2, 4)], [T4_num(3, 4), T5_num(3, 4)], 'm', 'LineWidth', 2);
     
-    % Label joint positions
-    text(T1_num(1, 4), T1_num(2, 4), T1_num(3, 4), 'Joint 1', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
-    text(T2_num(1, 4), T2_num(2, 4), T2_num(3, 4), 'Joint 2', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
-    text(T3_num(1, 4), T3_num(2, 4), T3_num(3, 4), 'Joint 3', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
-    text(T4_num(1, 4), T4_num(2, 4), T4_num(3, 4), 'Joint 4', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
-    text(T5_num(1, 4), T5_num(2, 4), T5_num(3, 4), 'Joint 5', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+    xlabel('X');
+    ylabel('Y');
+    zlabel('Z');
+    title(['Robot Config ', num2str(i)]);
+    grid on;
+    view(3);
+    hold off;
 end
-xlabel('X');
-ylabel('Y');
-zlabel('Z');
-title('Robot Configuration for Maximum Torques');
-grid on;
-view(3);
-hold off;
+
+% Plot the maximum torques histogram for the top three configurations
+for i = 1:3
+    subplot(3, 3, 3*i);
+    bar(top_configs(i, 6:10));
+    xlabel('Joints');
+    ylabel('Torque (Nm)');
+    title(['Max Torques - Config ', num2str(i)]);
+    grid on;
+end
 
 % Output maximum torques and corresponding configurations
-disp('Maximum Torques (Nm):');
-disp(max_torque_values);
+disp('Maximum Torques (Nm) for top configurations:');
+disp(top_configs(:, 6:10));
 disp('Configurations for Maximum Torques (radians):');
-disp(max_configs);
+disp(top_configs(:, 1:5));
 
-disp('Gravity vector')
-disp(G)
+disp('Gravity vector');
+disp(G);
 
-disp('m')
-disp(M)
+disp('Inertia matrix');
+disp(M);
 
-
-disp('C')
-disp(C)
+disp('Coriolis matrix');
+disp(C);
