@@ -101,3 +101,25 @@ disp(G);
 
 disp('Equations of Motion tau:');
 disp(tau);
+
+% 
+% % Simplify the inertia matrix
+% M_simplified = simplify(M);
+% disp('Simplified Inertia Matrix M:');
+% disp(M_simplified);
+% 
+% % Simplify the Coriolis and centrifugal matrix
+% C_simplified = simplify(C);
+% disp('Simplified Coriolis and Centrifugal Matrix C:');
+% disp(C_simplified);
+% 
+% % Simplify the gravity vector
+% G_simplified = simplify(G);
+% disp('Simplified Gravity Vector G:');
+% disp(G_simplified);
+% 
+% % Compute the simplified total torque
+% tau_simplified = simplify(M_simplified * ddq + C_simplified * dq + G_simplified);
+% disp('Simplified Equations of Motion tau:');
+% disp(tau_simplified);
+% 
