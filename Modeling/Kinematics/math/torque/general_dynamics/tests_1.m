@@ -222,3 +222,64 @@ disp(max(torques));
 
 disp('Minimum Torques (Nm):');
 disp(min(torques));
+
+% Animation of the robot movements
+figure;
+subplot(2, 1, 1);
+for i = 1:num_steps
+    q_vals = theta_traj(i, :)';
+    
+    % Compute transformation matrices for current joint angles
+    A1_i = double(subs(A1, theta1, q_vals(1)));
+    A2_i = double(subs(A2, theta2, q_vals(2)));
+    A3_i = double(subs(A3, theta3, q_vals(3)));
+    A4_i = double(subs(A4, theta4, q_vals(4)));
+    A5_i = double(subs(A5, theta5, q_vals(5)));
+    
+    % Compute positions of each joint
+    T1_i = A1_i;
+    T2_i = T1_i * A2_i;
+    T3_i = T2_i * A3_i;
+    T4_i = T3_i * A4_i;
+    T5_i = T4_i * A5_i;
+    
+    % Joint positions
+    p0 = [0; 0; 0];
+    p1 = T1_i(1:3, 4);
+    p2 = T2_i(1:3, 4);
+    p3 = T3_i(1:3, 4);
+    p4 = T4_i(1:3, 4);
+    p5 = T5_i(1:3, 4);
+    
+    % Plot robot
+    clf;
+    plot3([p0(1) p1(1)], [p0(2) p1(2)], [p0(3) p1(3)], 'r', 'LineWidth', 2);
+    hold on;
+    plot3([p1(1) p2(1)], [p1(2) p2(2)], [p1(3) p2(3)], 'g', 'LineWidth', 2);
+    plot3([p2(1) p3(1)], [p2(2) p3(2)], [p2(3) p3(3)], 'b', 'LineWidth', 2);
+    plot3([p3(1) p4(1)], [p3(2) p4(2)], [p3(3) p4(3)], 'c', 'LineWidth', 2);
+    plot3([p4(1) p5(1)], [p4(2) p5(2)], [p4(3) p5(3)], 'm', 'LineWidth', 2);
+    
+    % Set plot properties
+    xlabel('X (m)');
+    ylabel('Y (m)');
+    zlabel('Z (m)');
+    title('Robot Animation');
+    axis([-1 1 -1 1 0 1]);
+    grid on;
+    drawnow;
+    
+    % Pause for a short time to create animation effect
+    pause(0.1);
+end
+
+% Plot torques separately
+figure;
+for j = 1:5
+    subplot(5, 1, j);
+    plot(time, torques(:, j), 'LineWidth', 2);
+    xlabel('Time (s)');
+    ylabel(['Torque ' num2str(j) ' (Nm)']);
+    title(['Torque at Joint ' num2str(j) ' over Time']);
+    grid on;
+end

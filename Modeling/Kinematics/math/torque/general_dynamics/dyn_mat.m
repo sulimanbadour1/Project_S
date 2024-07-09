@@ -101,8 +101,8 @@ tau_func = matlabFunction(tau, 'Vars', {theta1, theta2, theta3, theta4, theta5, 
 % Numerical evaluation
 num_steps = 10;  % Number of steps for joint angles
 theta_vals = linspace(-pi, pi, num_steps);
-dtheta_vals = linspace(-2, 2, num_steps);  % Example range for joint velocities
-ddtheta_vals = linspace(-2, 2, num_steps);  % Example range for joint accelerations
+dtheta_vals = linspace(-1, 1, num_steps);  % Example range for joint velocities
+ddtheta_vals = linspace(-1, 1, num_steps);  % Example range for joint accelerations
 
 max_torque = zeros(5, 1);
 num_combinations = num_steps^5;

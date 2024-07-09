@@ -1,3 +1,7 @@
+% Define symbolic variables for masses and inertias
+syms m1 m2 m3 m4 m5 m_camera m_lights real
+syms I1 I2 I3 I4 I5 real
+
 % Define DH parameters
 d1 = 0.1;
 d5 = 0.1;
@@ -10,10 +14,7 @@ syms theta1 theta2 theta3 theta4 theta5 real
 syms dtheta1 dtheta2 dtheta3 dtheta4 dtheta5 real
 syms ddtheta1 ddtheta2 ddtheta3 ddtheta4 ddtheta5 real
 
-% Masses of the links and external parameters
-masses = [1.0, 1.0, 1.0, 1.0, 1.0];
-mass_camera = 0.5;
-mass_lights = 0.5;
+% External parameters
 g = 9.81;
 
 % Define DH transformation matrix function
@@ -53,22 +54,22 @@ Jv4 = jacobian(p4, [theta1, theta2, theta3, theta4, theta5]);
 Jv5 = jacobian(p5, [theta1, theta2, theta3, theta4, theta5]);
 
 % Inertia matrices for each link (simplified as diagonal matrices for demonstration)
-I1 = eye(3) * (1/12) * masses(1) * (d1^2);
-I2 = eye(3) * (1/12) * masses(2) * (a2^2);
-I3 = eye(3) * (1/12) * masses(3) * (a3^2);
-I4 = eye(3) * (1/12) * masses(4) * (d1^2);
-I5 = eye(3) * (1/12) * (masses(5) + mass_camera + mass_lights) * (d5^2);
+I1_matrix = eye(3) * I1;
+I2_matrix = eye(3) * I2;
+I3_matrix = eye(3) * I3;
+I4_matrix = eye(3) * I4;
+I5_matrix = eye(3) * I5;
 
 % Compute the inertia matrix
-M = Jv1' * masses(1) * Jv1 + Jv2' * masses(2) * Jv2 + Jv3' * masses(3) * Jv3 + ...
-    Jv4' * masses(4) * Jv4 + Jv5' * (masses(5) + mass_camera + mass_lights) * Jv5;
+M = Jv1' * m1 * Jv1 + Jv2' * m2 * Jv2 + Jv3' * m3 * Jv3 + ...
+    Jv4' * m4 * Jv4 + Jv5' * (m5 + m_camera + m_lights) * Jv5;
 
 % Compute the gravity vector
-G = Jv1' * masses(1) * [0; 0; -g] + ...
-    Jv2' * masses(2) * [0; 0; -g] + ...
-    Jv3' * masses(3) * [0; 0; -g] + ...
-    Jv4' * masses(4) * [0; 0; -g] + ...
-    Jv5' * (masses(5) + mass_camera + mass_lights) * [0; 0; -g];
+G = Jv1' * m1 * [0; 0; -g] + ...
+    Jv2' * m2 * [0; 0; -g] + ...
+    Jv3' * m3 * [0; 0; -g] + ...
+    Jv4' * m4 * [0; 0; -g] + ...
+    Jv5' * (m5 + m_camera + m_lights) * [0; 0; -g];
 
 % Define q, dq, and ddq
 q = [theta1; theta2; theta3; theta4; theta5];
