@@ -108,8 +108,8 @@ tau_func = matlabFunction(G + M * ddq, 'Vars', {q, dq, ddq});
 
 % Define initial and final configurations
 initial_config = [0, 0, 0, 0, 0];  % Initial configuration (all joint angles at 0)
-final_config1 = [0, 1, -0.5, -0.5, 0];  % Configuration for max torques
-final_config2 = [0, -1, 0.5, 0.5, 0];  % Another configuration for max torques
+final_config1 = [3.14, 0.8, 0, 0, 0];  % Configuration for max torques
+final_config2 = [0, -0.8, 0, 0, 0];  % Another configuration for max torques
 
 % Simulation time
 t_final = 10;  % Final time in seconds
