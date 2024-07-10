@@ -18,6 +18,13 @@ external_forces = [0, 0, 0];  % No external forces in this example
 external_torques = [0, 0, 0, 0, 0];  % No external torques in this example
 g = 9.81;
 
+% Define lengths of the links (assuming these are given)
+L1 = d1;
+L2 = a2;
+L3 = a3;
+L4 = d5;
+L5 = d5;  % Assuming the last link has length d5
+
 % Define DH transformation matrix function
 dh = @(theta, d, a, alpha) [
     cos(theta) -sin(theta)*cosd(alpha)  sin(theta)*sind(alpha) a*cos(theta);
@@ -78,7 +85,7 @@ dq = [dtheta1; dtheta2; dtheta3; dtheta4; dtheta5];
 ddq = [ddtheta1; ddtheta2; ddtheta3; ddtheta4; ddtheta5];
 
 % Compute Coriolis and centrifugal matrix
-C = sym(zeros(5));
+C = sym(zeros(5,5));
 for k = 1:5
     for j = 1:5
         for i = 1:5
@@ -98,6 +105,25 @@ tau_func = matlabFunction(tau, 'Vars', {theta1, theta2, theta3, theta4, theta5, 
                                         dtheta1, dtheta2, dtheta3, dtheta4, dtheta5, ...
                                         ddtheta1, ddtheta2, ddtheta3, ddtheta4, ddtheta5});
 
+% Kinetic Energy
+T = 0.5 * dq' * M * dq;
+
+% Potential Energy (gravitational)
+% Using the provided equations:
+U_g1 = -masses(1) * g * L1;
+U_g2 = -masses(2) * g * (L1 + 1/2 * L2 * sin(theta2));
+U_g3 = -masses(3) * g * (L1 + L2 * sin(theta2) + 1/2 * L3 * sin(theta2 + theta3));
+U_g4 = -masses(4) * g * (L1 + L2 * sin(theta2) + L3 * sin(theta2 + theta3) + 1/2 * L4 * sin(theta2 + theta3 + theta4));
+U_g5 = -(masses(5) + mass_camera + mass_lights) * g * (L1 + L2 * sin(theta2) + L3 * sin(theta2 + theta3) + L4 * sin(theta2 + theta3 + theta4) + 1/2 * L5 * sin(theta2 + theta3 + theta4));
+
+% Total potential energy
+V = U_g1 + U_g2 + U_g3 + U_g4 + U_g5;
+
+% Convert symbolic expression to numeric functions
+T_func = matlabFunction(T, 'Vars', {theta1, theta2, theta3, theta4, theta5, ...
+                                    dtheta1, dtheta2, dtheta3, dtheta4, dtheta5});
+V_func = matlabFunction(V, 'Vars', {theta1, theta2, theta3, theta4, theta5});
+
 % Numerical evaluation
 num_steps = 10;  % Number of steps for joint angles
 theta_vals = linspace(-pi, pi, num_steps);
@@ -116,6 +142,11 @@ end
 
 % Parallel pool setup
 parpool('local');
+
+% Initialize variables for energies
+kinetic_energies = zeros(num_combinations, 1);
+potential_energies = zeros(num_combinations, 1);
+total_energies = zeros(num_combinations, 1);
 
 parfor idx = 1:num_combinations
     % Convert linear index to subscripts manually
@@ -143,6 +174,11 @@ parfor idx = 1:num_combinations
     
     max_torque = max(max_torque, abs(torques));
     configurations(idx, :) = [t1, t2, t3, t4, t5, torques'];
+    
+    % Compute energies
+    kinetic_energies(idx) = T_func(t1, t2, t3, t4, t5, dt1, dt2, dt3, dt4, dt5);
+    potential_energies(idx) = V_func(t1, t2, t3, t4, t5);
+    total_energies(idx) = kinetic_energies(idx) + potential_energies(idx);
 end
 
 delete(gcp);  % Shut down the parallel pool
@@ -150,6 +186,31 @@ delete(gcp);  % Shut down the parallel pool
 % Find configurations for maximum torques
 [max_torque_values, max_idx] = max(configurations(:, 6:end), [], 1);
 max_configs = configurations(max_idx, 1:5);
+
+% Compute energies for maximum torque configurations
+max_kinetic_energies = zeros(5, 1);
+max_potential_energies = zeros(5, 1);
+max_total_energies = zeros(5, 1);
+
+for i = 1:5
+    t1 = max_configs(i, 1);
+    t2 = max_configs(i, 2);
+    t3 = max_configs(i, 3);
+    t4 = max_configs(i, 4);
+    t5 = max_configs(i, 5);
+
+    % Random velocities and accelerations for the configuration
+    dt1 = dtheta_vals(randi([1 num_steps]));
+    dt2 = dtheta_vals(randi([1 num_steps]));
+    dt3 = dtheta_vals(randi([1 num_steps]));
+    dt4 = dtheta_vals(randi([1 num_steps]));
+    dt5 = dtheta_vals(randi([1 num_steps]));
+
+    % Compute energies
+    max_kinetic_energies(i) = T_func(t1, t2, t3, t4, t5, dt1, dt2, dt3, dt4, dt5);
+    max_potential_energies(i) = V_func(t1, t2, t3, t4, t5);
+    max_total_energies(i) = max_kinetic_energies(i) + max_potential_energies(i);
+end
 
 % Plot the maximum torques
 figure;
@@ -201,11 +262,31 @@ disp(max_torque_values);
 disp('Configurations for Maximum Torques (radians):');
 disp(max_configs);
 
-disp('Gravity vector')
-disp(G)
+disp('Gravity vector');
+disp(G);
 
-disp('m')
-disp(M)
+disp('Inertia matrix');
+disp(M);
 
-disp('C')
-disp(C)
+disp('Coriolis and centrifugal matrix');
+disp(C);
+
+% Plot the energies for the maximum torque configurations
+figure;
+subplot(3, 1, 1);
+bar(max_kinetic_energies);
+xlabel('Configurations');
+ylabel('Kinetic Energy (J)');
+title('Kinetic Energy for Maximum Torque Configurations');
+
+subplot(3, 1, 2);
+bar(max_potential_energies);
+xlabel('Configurations');
+ylabel('Potential Energy (J)');
+title('Potential Energy for Maximum Torque Configurations');
+
+subplot(3, 1, 3);
+bar(max_total_energies);
+xlabel('Configurations');
+ylabel('Total Energy (J)');
+title('Total Energy for Maximum Torque Configurations');

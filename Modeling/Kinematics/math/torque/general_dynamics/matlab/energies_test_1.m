@@ -8,12 +8,20 @@ alpha = [pi/2, 0, 0, pi/2, 0];  % Twist angles in radians
 % Define symbolic variables for joint angles and velocities
 syms theta1 theta2 theta3 theta4 theta5 real
 syms dtheta1 dtheta2 dtheta3 dtheta4 dtheta5 real
+syms ddtheta1 ddtheta2 ddtheta3 ddtheta4 ddtheta5 real
 
 % Masses of the links and additional components
 masses = [1.0, 1.0, 1.0, 1.0, 1.0];
 mass_camera = 0.5;
 mass_lights = 0.5;
 g = 9.81;  % Gravitational acceleration
+
+% Define lengths of the links (assuming these are given)
+L1 = d1;
+L2 = a2;
+L3 = a3;
+L4 = d5;
+L5 = d5;  % Assuming the last link has length d5
 
 % Define DH transformation matrix function
 dh = @(theta, d, a, alpha) [
@@ -69,16 +77,25 @@ G = Jv1' * masses(1) * [0; 0; -g] + ...
     Jv4' * masses(4) * [0; 0; -g] + ...
     Jv5' * (masses(5) + mass_camera + mass_lights) * [0; 0; -g];
 
-% Define q and dq
+% Define q, dq, and ddq
 q = [theta1; theta2; theta3; theta4; theta5];
 dq = [dtheta1; dtheta2; dtheta3; dtheta4; dtheta5];
+ddq = [ddtheta1; ddtheta2; ddtheta3; ddtheta4; ddtheta5];
 
 % Kinetic energy
 T = 0.5 * dq.' * M * dq;
 
 % Potential energy
-V = masses(1) * g * p1(3) + masses(2) * g * p2(3) + masses(3) * g * p3(3) + ...
-    masses(4) * g * p4(3) + (masses(5) + mass_camera + mass_lights) * g * p5(3);
+% Potential Energy (gravitational)
+% Using the provided equations:
+U_g1 = -masses(1) * g * L1;
+U_g2 = -masses(2) * g * (L1 + 1/2 * L2 * sin(theta2));
+U_g3 = -masses(3) * g * (L1 + L2 * sin(theta2) + 1/2 * L3 * sin(theta2 + theta3));
+U_g4 = -masses(4) * g * (L1 + L2 * sin(theta2) + L3 * sin(theta2 + theta3) + 1/2 * L4 * sin(theta2 + theta3 + theta4));
+U_g5 = -(masses(5) + mass_camera + mass_lights) * g * (L1 + L2 * sin(theta2) + L3 * sin(theta2 + theta3) + L4 * sin(theta2 + theta3 + theta4) + 1/2 * L5 * sin(theta2 + theta3 + theta4));
+
+% Total potential energy
+V = U_g1 + U_g2 + U_g3 + U_g4 + U_g5;
 
 % Total energy
 E = T + V;
@@ -87,11 +104,11 @@ E = T + V;
 T_func = matlabFunction(T, 'Vars', {q, dq});
 V_func = matlabFunction(V, 'Vars', {q});
 E_func = matlabFunction(E, 'Vars', {q, dq});
-tau_func = matlabFunction(G + M * dq, 'Vars', {q, dq});
+tau_func = matlabFunction(G + M * ddq, 'Vars', {q, dq, ddq});
 
 % Define initial and final configurations
 initial_config = [0, 0, 0, 0, 0];  % Initial configuration (all joint angles at 0)
-final_config = [-0.3491, 3.1416, -0.3491, 1.0472, -2.4435];  % Configuration for max torques
+final_config = [-3.1416, 2.4435, 1.0472, 1.7453, 0.3491];  % Configuration for max torques
 
 % Simulation time
 t_final = 10;  % Final time in seconds
@@ -104,14 +121,16 @@ for i = 1:5
     coeffs(:, i) = polyfit([0, t_final], [initial_config(i), final_config(i)], 5);
 end
 
-% Compute joint angles and velocities using polynomial derivatives
+% Compute joint angles, velocities, and accelerations using polynomial derivatives
 theta_traj = zeros(num_steps, 5);
 dtheta_traj = zeros(num_steps, 5);
+ddtheta_traj = zeros(num_steps, 5);
 for i = 1:num_steps
     t = time(i);
     for j = 1:5
         theta_traj(i, j) = polyval(coeffs(:, j), t);
         dtheta_traj(i, j) = polyval(polyder(coeffs(:, j)), t);
+        ddtheta_traj(i, j) = polyval(polyder(polyder(coeffs(:, j))), t);
     end
 end
 
@@ -125,14 +144,51 @@ torques = zeros(num_steps, 5);
 for i = 1:num_steps
     q_vals = theta_traj(i, :)';
     dq_vals = dtheta_traj(i, :)';
+    ddq_vals = ddtheta_traj(i, :)';
     
     kinetic_energy(i) = T_func(q_vals, dq_vals);
     potential_energy(i) = V_func(q_vals);
     total_energy(i) = E_func(q_vals, dq_vals);
-    torques(i, :) = tau_func(q_vals, dq_vals);
+    torques(i, :) = tau_func(q_vals, dq_vals, ddq_vals);
 end
 
-% Plot joint angles
+% Create figure for animation
+figure;
+hold on;
+grid on;
+axis equal;
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
+title('End Effector Trajectory and Robot Animation');
+view(3);
+
+% Plot the end effector trajectory
+plot3(end_effector_positions(:, 1), end_effector_positions(:, 2), end_effector_positions(:, 3), 'k--', 'LineWidth', 2);
+
+% Initialize plot for robot
+robot_plot = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
+end_effector_plot = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
+
+% Add labels for the base and end effector
+base_label = text(0, 0, 0, 'Base', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'blue');
+end_effector_label = text(0, 0, 0, 'End Effector', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'red');
+
+% Animate the robot
+for i = 1:num_steps
+    % Extract joint positions
+    T_matrices = robot_configurations(i, :);
+    points = [0, 0, 0; T_matrices{1}(1:3, 4)'; T_matrices{2}(1:3, 4)'; T_matrices{3}(1:3, 4)'; T_matrices{4}(1:3, 4)'; T_matrices{5}(1:3, 4)'];
+    % Update robot plot
+    set(robot_plot, 'XData', points(:, 1), 'YData', points(:, 2), 'ZData', points(:, 3));
+    % Update end effector plot
+    set(end_effector_plot, 'XData', points(end, 1), 'YData', points(end, 2), 'ZData', points(end, 3));
+    % Update end effector label
+    set(end_effector_label, 'Position', points(end, :));
+    drawnow;
+end
+
+% Plot joint angles in a new figure
 figure;
 for j = 1:5
     subplot(5, 1, j);
@@ -143,7 +199,7 @@ for j = 1:5
     grid on;
 end
 
-% Plot joint velocities
+% Plot joint velocities in a new figure
 figure;
 for j = 1:5
     subplot(5, 1, j);
@@ -154,7 +210,30 @@ for j = 1:5
     grid on;
 end
 
-% Plot energies
+% Plot joint accelerations in a new figure
+figure;
+for j = 1:5
+    subplot(5, 1, j);
+    plot(time, ddtheta_traj(:, j), 'LineWidth', 2);
+    xlabel('Time (s)');
+    ylabel(['ddTheta ' num2str(j) ' (rad/s^2)']);
+    title(['Joint Acceleration ' num2str(j) ' over Time']);
+    grid on;
+end
+
+% Plot torques in a new figure
+figure;
+hold on;
+for j = 1:5
+    plot(time, torques(:, j), 'LineWidth', 2, 'DisplayName', ['Torque ' num2str(j)]);
+end
+xlabel('Time (s)');
+ylabel('Torque (Nm)');
+title('Torques at Joints over Time');
+legend('show');
+grid on;
+
+% Plot energies in a new figure
 figure;
 subplot(3, 1, 1);
 plot(time, kinetic_energy, 'r', 'LineWidth', 2);
@@ -177,19 +256,7 @@ ylabel('Total Energy (J)');
 title('Total Energy over Time');
 grid on;
 
-% Plot torques
-figure;
-for j = 1:5
-    subplot(5, 1, j);
-    plot(time, torques(:, j), 'LineWidth', 2);
-    xlabel('Time (s)');
-    ylabel(['Torque ' num2str(j) ' (Nm)']);
-    title(['Torque at Joint ' num2str(j) ' over Time']);
-    grid on;
-end
-
-% Energy conservation validation
-energy_difference = abs(total_energy - total_energy(1));
+% Energy conservation validation in a new figure
 figure;
 plot(time, energy_difference, 'g', 'LineWidth', 2);
 xlabel('Time (s)');
@@ -197,89 +264,22 @@ ylabel('Energy Difference (J)');
 title('Energy Conservation Validation');
 grid on;
 
-% Summarize energy values
-disp('Maximum Kinetic Energy (J):');
-disp(max(kinetic_energy));
-
-disp('Minimum Kinetic Energy (J):');
-disp(min(kinetic_energy));
-
-disp('Maximum Potential Energy (J):');
-disp(max(potential_energy));
-
-disp('Minimum Potential Energy (J):');
-disp(min(potential_energy));
-
-disp('Maximum Total Energy (J):');
-disp(max(total_energy));
-
-disp('Minimum Total Energy (J):');
-disp(min(total_energy));
-
-% Summarize torques
-disp('Maximum Torques (Nm):');
-disp(max(torques));
-
-disp('Minimum Torques (Nm):');
-disp(min(torques));
-
-% Animation of the robot movements
-figure;
-subplot(2, 1, 1);
-for i = 1:num_steps
-    q_vals = theta_traj(i, :)';
-    
-    % Compute transformation matrices for current joint angles
-    A1_i = double(subs(A1, theta1, q_vals(1)));
-    A2_i = double(subs(A2, theta2, q_vals(2)));
-    A3_i = double(subs(A3, theta3, q_vals(3)));
-    A4_i = double(subs(A4, theta4, q_vals(4)));
-    A5_i = double(subs(A5, theta5, q_vals(5)));
-    
-    % Compute positions of each joint
-    T1_i = A1_i;
-    T2_i = T1_i * A2_i;
-    T3_i = T2_i * A3_i;
-    T4_i = T3_i * A4_i;
-    T5_i = T4_i * A5_i;
-    
-    % Joint positions
-    p0 = [0; 0; 0];
-    p1 = T1_i(1:3, 4);
-    p2 = T2_i(1:3, 4);
-    p3 = T3_i(1:3, 4);
-    p4 = T4_i(1:3, 4);
-    p5 = T5_i(1:3, 4);
-    
-    % Plot robot
-    clf;
-    plot3([p0(1) p1(1)], [p0(2) p1(2)], [p0(3) p1(3)], 'r', 'LineWidth', 2);
-    hold on;
-    plot3([p1(1) p2(1)], [p1(2) p2(2)], [p1(3) p2(3)], 'g', 'LineWidth', 2);
-    plot3([p2(1) p3(1)], [p2(2) p3(2)], [p2(3) p3(3)], 'b', 'LineWidth', 2);
-    plot3([p3(1) p4(1)], [p3(2) p4(2)], [p3(3) p4(3)], 'c', 'LineWidth', 2);
-    plot3([p4(1) p5(1)], [p4(2) p5(2)], [p4(3) p5(3)], 'm', 'LineWidth', 2);
-    
-    % Set plot properties
-    xlabel('X (m)');
-    ylabel('Y (m)');
-    zlabel('Z (m)');
-    title('Robot Animation');
-    axis([-1 1 -1 1 0 1]);
-    grid on;
-    drawnow;
-    
-    % Pause for a short time to create animation effect
-    pause(0.1);
-end
-
-% Plot torques separately
-figure;
-for j = 1:5
-    subplot(5, 1, j);
-    plot(time, torques(:, j), 'LineWidth', 2);
-    xlabel('Time (s)');
-    ylabel(['Torque ' num2str(j) ' (Nm)']);
-    title(['Torque at Joint ' num2str(j) ' over Time']);
-    grid on;
+% Function to plot the robot's configuration
+function plot_robot(T_matrices, ax)
+    hold(ax, 'on');
+    % Base point
+    origin = [0; 0; 0];
+    % Extract positions of the joints
+    points = [origin, T_matrices{1}(1:3, 4), T_matrices{2}(1:3, 4), T_matrices{3}(1:3, 4), T_matrices{4}(1:3, 4), T_matrices{5}(1:3, 4)];
+    % Plot links
+    plot3(ax, points(1, :), points(2, :), points(3, :), '-o', 'LineWidth', 2, 'MarkerSize', 10);
+    % Plot end effector
+    plot3(ax, T_matrices{5}(1, 4), T_matrices{5}(2, 4), T_matrices{5}(3, 4), 'r*', 'MarkerSize', 10);
+    hold(ax, 'off');
+    xlabel(ax, 'X');
+    ylabel(ax, 'Y');
+    zlabel(ax, 'Z');
+    grid(ax, 'on');
+    axis(ax, 'equal');
+    view(ax, 3);
 end

@@ -15,6 +15,14 @@ mass_camera = 0.5;
 mass_lights = 0.5;
 g = 9.81;  % Gravitational acceleration
 
+% Define lengths of the links (assuming these are given)
+L1 = d1;
+L2 = a2;
+L3 = a3;
+L4 = d5;
+L5 = d5;  % Assuming the last link has length d5
+
+
 % Define DH transformation matrix function
 dh = @(theta, d, a, alpha) [
     cos(theta) -sin(theta)*cos(alpha)  sin(theta)*sin(alpha) a*cos(theta);
@@ -77,8 +85,16 @@ dq = [dtheta1; dtheta2; dtheta3; dtheta4; dtheta5];
 T = 0.5 * dq.' * M * dq;
 
 % Potential energy
-V = masses(1) * g * p1(3) + masses(2) * g * p2(3) + masses(3) * g * p3(3) + ...
-    masses(4) * g * p4(3) + (masses(5) + mass_camera + mass_lights) * g * p5(3);
+% Potential Energy (gravitational)
+% Using the provided equations:
+U_g1 = -masses(1) * g * L1;
+U_g2 = -masses(2) * g * (L1 + 1/2 * L2 * sin(theta2));
+U_g3 = -masses(3) * g * (L1 + L2 * sin(theta2) + 1/2 * L3 * sin(theta2 + theta3));
+U_g4 = -masses(4) * g * (L1 + L2 * sin(theta2) + L3 * sin(theta2 + theta3) + 1/2 * L4 * sin(theta2 + theta3 + theta4));
+U_g5 = -(masses(5) + mass_camera + mass_lights) * g * (L1 + L2 * sin(theta2) + L3 * sin(theta2 + theta3) + L4 * sin(theta2 + theta3 + theta4) + 1/2 * L5 * sin(theta2 + theta3 + theta4));
+
+% Total potential energy
+V = U_g1 + U_g2 + U_g3 + U_g4 + U_g5;
 
 % Total energy
 E = T + V;

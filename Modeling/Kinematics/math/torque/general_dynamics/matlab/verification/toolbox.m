@@ -3,7 +3,7 @@ d1 = 0.1;
 d5 = 0.1;
 a2 = 0.5;
 a3 = 0.5;
-alpha = [90, 0, 0, 90, 0];
+alpha = [pi/2, 0, 0, pi/2, 0];
 
 % Define symbolic variables
 syms theta1 theta2 theta3 theta4 theta5 real
@@ -14,16 +14,14 @@ syms ddtheta1 ddtheta2 ddtheta3 ddtheta4 ddtheta5 real
 masses = [1.0, 1.0, 1.0, 1.0, 1.0];
 mass_camera = 0.5;
 mass_lights = 0.5;
-external_forces = [0, 0, 0];  % No external forces in this example
-external_torques = [0, 0, 0, 0, 0];  % No external torques in this example
 g = 9.81;
 
 % Define DH transformation matrix function
 dh = @(theta, d, a, alpha) [
-    cos(theta) -sin(theta)*cosd(alpha)  sin(theta)*sind(alpha) a*cos(theta);
-    sin(theta)  cos(theta)*cosd(alpha) -cos(theta)*sind(alpha) a*sin(theta);
-    0           sind(alpha)             cosd(alpha)             d;
-    0           0                       0                       1
+    cos(theta) -sin(theta)*cos(alpha)  sin(theta)*sin(alpha) a*cos(theta);
+    sin(theta)  cos(theta)*cos(alpha) -cos(theta)*sin(alpha) a*sin(theta);
+    0           sin(alpha)             cos(alpha)             d;
+    0           0                      0                      1
 ];
 
 % Compute transformation matrices
@@ -88,6 +86,8 @@ for k = 1:5
 end
 
 % External forces and torques
+external_forces = [0, 0, 0];  % No external forces in this example
+external_torques = [0, 0, 0, 0, 0];  % No external torques in this example
 F_ext = [external_forces, external_torques];
 
 % Total torque calculation
@@ -201,11 +201,31 @@ disp(max_torque_values);
 disp('Configurations for Maximum Torques (radians):');
 disp(max_configs);
 
-disp('Gravity vector')
-disp(G)
+% Verifications using Robotics Toolbox
 
-disp('m')
-disp(M)
+% Define links using Robotics Toolbox
+L1 = Link('d', d1, 'a', 0, 'alpha', pi/2);
+L2 = Link('d', 0, 'a', a2, 'alpha', 0);
+L3 = Link('d', 0, 'a', a3, 'alpha', 0);
+L4 = Link('d', 0, 'a', 0, 'alpha', pi/2);
+L5 = Link('d', d5, 'a', 0, 'alpha', 0);
 
-disp('C')
-disp(C)
+% Create a SerialLink object
+robot = SerialLink([L1, L2, L3, L4, L5]);
+
+% Verify forward kinematics
+theta_vals_example = [0, pi/4, -pi/4, pi/2, -pi/2];
+T_robot = robot.fkine(theta_vals_example);
+T_code = double(subs(T5, {theta1, theta2, theta3, theta4, theta5}, theta_vals_example));
+assert(norm(T_robot.T - T_code) < 1e-6, 'Forward kinematics does not match');
+
+% Verify dynamics
+dtheta_vals_example = [0.1, -0.1, 0.2, -0.2, 0.3];
+ddtheta_vals_example = [0.01, -0.01, 0.02, -0.02, 0.03];
+tau_robot = robot.rne(theta_vals_example, dtheta_vals_example, ddtheta_vals_example);
+tau_code = tau_func(theta_vals_example(1), theta_vals_example(2), theta_vals_example(3), theta_vals_example(4), theta_vals_example(5), ...
+                   dtheta_vals_example(1), dtheta_vals_example(2), dtheta_vals_example(3), dtheta_vals_example(4), dtheta_vals_example(5), ...
+                   ddtheta_vals_example(1), ddtheta_vals_example(2), ddtheta_vals_example(3), ddtheta_vals_example(4), ddtheta_vals_example(5));
+assert(norm(tau_robot' - tau_code) < 1e-3, 'Dynamic torques do not match');
+
+disp('All verifications passed successfully.');
