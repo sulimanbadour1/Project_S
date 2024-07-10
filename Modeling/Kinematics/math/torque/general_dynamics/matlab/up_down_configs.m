@@ -412,11 +412,38 @@ for i = 1:num_steps
 end
 
 % Print end effector positions
-% disp('End Effector Positions for Config 1:');
-% disp(end_effector_positions1);
-% 
-% disp('End Effector Positions for Config 2:');
-% disp(end_effector_positions2);
+disp('End Effector Positions for Config 1:');
+disp(end_effector_positions1);
+
+disp('End Effector Positions for Config 2:');
+disp(end_effector_positions2);
+
+fprintf(" Writing new ")
+
+% Print initial and final torques and remaining parameters for Configuration 1
+fprintf('Configuration 1 - Initial Torque: [%f, %f, %f, %f, %f] Nm\n', torques1(1, :));
+fprintf('Configuration 1 - Final Torque: [%f, %f, %f, %f, %f] Nm\n', torques1(end, :));
+
+% Print initial and final torques and remaining parameters for Configuration 2
+fprintf('Configuration 2 - Initial Torque: [%f, %f, %f, %f, %f] Nm\n', torques2(1, :));
+fprintf('Configuration 2 - Final Torque: [%f, %f, %f, %f, %f] Nm\n', torques2(end, :));
+
+
+% Print peak torque values for Configuration 1 with original signs
+for j = 1:5
+    [peak_torque1_value, idx] = max(abs(torques1(:, j)));
+    peak_torque1 = torques1(idx, j);
+    fprintf('Configuration 1 - Joint %d Peak Torque: %f Nm\n', j, peak_torque1);
+end
+
+% Print peak torque values for Configuration 2 with original signs
+for j = 1:5
+    [peak_torque2_value, idx] = max(abs(torques2(:, j)));
+    peak_torque2 = torques2(idx, j);
+    fprintf('Configuration 2 - Joint %d Peak Torque: %f Nm\n', j, peak_torque2);
+end
+
+
 
 % Function to compute trajectory, energies, and torques for a given final configuration
 function [theta_traj, dtheta_traj, ddtheta_traj, kinetic_energy, potential_energy, total_energy, torques, end_effector_positions, robot_configurations] = compute_trajectory(final_config, t_final, num_steps, time, q, T5, T_func, V_func, E_func, tau_func, A1, A2, A3, A4, A5)
