@@ -1,8 +1,8 @@
-% Define DH parameters
+% Define DH parameters for the new robot arm
 d1 = 0.1;  % Link offset
 d5 = 0.1;  % Link offset
-a2 = 0.5;  % Link length
-a3 = 0.5;  % Link length
+a2 = 0.7;  % Link length
+a3 = 0.7;  % Link length
 alpha = [pi/2, 0, 0, pi/2, 0];  % Twist angles in radians
 
 % Define symbolic variables for joint angles and velocities
@@ -104,80 +104,148 @@ V_func = matlabFunction(V, 'Vars', {q});
 E_func = matlabFunction(E, 'Vars', {q, dq});
 tau_func = matlabFunction(G + M * ddq, 'Vars', {q, dq, ddq});
 
-% Define circular path parameters
-radius = 0.2;  % Radius of the circular path around the printer bed in meters
-height = 0.2;  % Height of the circular path from the base of the printer bed in meters
-center = [0.3, 0.3, height];  % Center of the printer bed in meters
-num_points = 100;  % Number of waypoints in the circular path
-angle_step = 2 * pi / num_points;  % Angle step for each waypoint
+% Define the simulation parameters
+t_final = 20;  % Total simulation time in seconds
+num_points = 40;  % Number of points along the trajectory
+time = linspace(0, t_final, num_points);  % Time vector
 
-% Initialize arrays for storing waypoints
-waypoints = zeros(num_points, 3);
+% Define the circle trajectory around the printer
+radius = 0.4;  % Radius of the circle to avoid collisions
+center = [0.5, 0.5, 0.2];  % Center of the circle, accounting for printer dimensions
+theta_circle = linspace(0, 2*pi, num_points);
 
-% Generate waypoints for the circular path
-for i = 1:num_points
-    angle = (i - 1) * angle_step;
-    waypoints(i, 1) = center(1) + radius * cos(angle);
-    waypoints(i, 2) = center(2) + radius * sin(angle);
-    waypoints(i, 3) = center(3);
-end
+circle_positions = center + [radius * cos(theta_circle)', radius * sin(theta_circle)', zeros(num_points, 1)];
 
-% Define initial guess for joint angles
-initial_guess = [0, pi/6, -pi/6, -pi/6, 0];
-
-% Initialize arrays to store joint angles for the trajectory
+% Initialize arrays for storing joint angles
 theta_traj = zeros(num_points, 5);
+dtheta_traj = zeros(num_points, 5);
+ddtheta_traj = zeros(num_points, 5);
 
-% Solve inverse kinematics for each waypoint
+% Solve for joint angles to follow the circle trajectory
 for i = 1:num_points
-    target_position = waypoints(i, :).';
+    target_position = circle_positions(i, :)';
+    constraint = theta2 + theta3 + theta4 == 0;
+
     eqns = [T5(1:3, 4) == target_position; constraint];
-    sol = vpasolve(eqns, vars, initial_guess);
-    theta_traj(i, :) = double([sol.theta1, sol.theta2, sol.theta3, sol.theta4, sol.theta5]);
-    initial_guess = theta_traj(i, :);  % Update initial guess for next iteration
+    initial_guess = [0, pi/6, -pi/6, -pi/6, 0];
+
+    sol = vpasolve(eqns, [theta1, theta2, theta3, theta4, theta5], initial_guess);
+
+    % Check if a solution was found
+    if isempty(sol.theta1)
+        % If no solution, use the previous valid joint angles
+        if i > 1
+            theta_traj(i, :) = theta_traj(i-1, :);
+        else
+            theta_traj(i, :) = initial_guess;  % Use the initial guess for the first point
+        end
+    else
+        theta_traj(i, :) = double([sol.theta1, sol.theta2, sol.theta3, sol.theta4, sol.theta5]);
+    end
 end
 
-% Compute joint velocities and accelerations
-time = linspace(0, t_final, num_points);
-dtheta_traj = zeros(size(theta_traj));
-ddtheta_traj = zeros(size(theta_traj));
-for j = 1:5
-    dtheta_traj(:, j) = gradient(theta_traj(:, j), time);
-    ddtheta_traj(:, j) = gradient(dtheta_traj(:, j), time);
+% Compute joint velocities and accelerations using finite differences
+for i = 2:num_points-1
+    dtheta_traj(i, :) = (theta_traj(i+1, :) - theta_traj(i-1, :)) / (2 * (t_final / num_points));
+    ddtheta_traj(i, :) = (theta_traj(i+1, :) - 2 * theta_traj(i, :) + theta_traj(i-1, :)) / ((t_final / num_points)^2);
 end
 
-% Compute torques, energies, and end effector positions
-[kinetic_energy, potential_energy, total_energy, torques, end_effector_positions, robot_configurations] = ...
-    compute_trajectory(theta_traj, dtheta_traj, ddtheta_traj, time, q, T5, T_func, V_func, E_func, tau_func, A1, A2, A3, A4, A5);
+% Initialize energy and torque arrays
+kinetic_energy = zeros(num_points, 1);
+potential_energy = zeros(num_points, 1);
+total_energy = zeros(num_points, 1);
+torques = zeros(num_points, 5);
 
-% Extract values at 10 specific points
-indices = round(linspace(1, num_points, 10));
+% Compute end effector positions for the trajectory
+end_effector_positions = zeros(num_points, 3);
+robot_configurations = cell(num_points, 5);  % Store robot configurations for plotting
+for i = 1:num_points
+    q_vals = theta_traj(i, :)';
+    dq_vals = dtheta_traj(i, :)';
+    ddq_vals = ddtheta_traj(i, :)';
 
-fprintf('Extracted Values at 10 Points:\n');
-for i = 1:10
-    idx = indices(i);
-    fprintf('Point %d (time = %.2f s):\n', i, time(idx));
-    fprintf('  End Effector Position: [%f, %f, %f]\n', end_effector_positions(idx, :));
-    fprintf('  Joint Angles (rad): [%f, %f, %f, %f, %f]\n', theta_traj(idx, :));
-    fprintf('  Joint Velocities (rad/s): [%f, %f, %f, %f, %f]\n', dtheta_traj(idx, :));
-    fprintf('  Joint Accelerations (rad/s^2): [%f, %f, %f, %f, %f]\n', ddtheta_traj(idx, :));
-    fprintf('  Torques (Nm): [%f, %f, %f, %f, %f]\n', torques(idx, :));
+    kinetic_energy(i) = T_func(q_vals, dq_vals);
+    potential_energy(i) = V_func(q_vals);
+    total_energy(i) = E_func(q_vals, dq_vals);
+    torques(i, :) = tau_func(q_vals, dq_vals, ddq_vals);
+
+    T_current = double(subs(T5, {q(1), q(2), q(3), q(4), q(5)}, q_vals.'));
+    end_effector_positions(i, :) = T_current(1:3, 4);
+    % Store current configuration
+    robot_configurations{i, 1} = double(subs(A1, q(1), q_vals(1)));
+    robot_configurations{i, 2} = double(robot_configurations{i, 1} * subs(A2, q(2), q_vals(2)));
+    robot_configurations{i, 3} = double(robot_configurations{i, 2} * subs(A3, q(3), q_vals(3)));
+    robot_configurations{i, 4} = double(robot_configurations{i, 3} * subs(A4, q(4), q_vals(4)));
+    robot_configurations{i, 5} = double(robot_configurations{i, 4} * subs(A5, q(5), q_vals(5)));
 end
 
-% Plot joint angles over time
+% Animate the robot for the circle trajectory
 figure;
 hold on;
+grid on;
+axis equal;
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
+title('End Effector Trajectory and Robot Animation for Circular Motion');
+view(3);
+robot_plot = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
+end_effector_plot = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
+base_label = text(-0.1, 0, 0, 'Base', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'blue', 'HorizontalAlignment', 'right');
+end_effector_label = text(-0.1, 0, 0, 'End Effector', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'red', 'HorizontalAlignment', 'right');
+
+% Plot the end effector trajectory
+plot3(end_effector_positions(:, 1), end_effector_positions(:, 2), end_effector_positions(:, 3), 'k--', 'LineWidth', 2);
+
+% Animate the trajectory
+for i = 1:num_points
+    T_matrices = robot_configurations(i, :);
+    points = [0, 0, 0; T_matrices{1}(1:3, 4)'; T_matrices{2}(1:3, 4)'; T_matrices{3}(1:3, 4)'; T_matrices{4}(1:3, 4)'; T_matrices{5}(1:3, 4)'];
+    set(robot_plot, 'XData', points(:, 1), 'YData', points(:, 2), 'ZData', points(:, 3));
+    set(end_effector_plot, 'XData', points(end, 1), 'YData', points(end, 2), 'ZData', points(end, 3));
+    set(end_effector_label, 'Position', [points(end, 1) - 0.1, points(end, 2), points(end, 3)]);
+
+    drawnow;
+end
+
+% Print end effector positions
+disp('End Effector Positions:');
+disp(end_effector_positions);
+
+% Print initial and final torques and remaining parameters
+fprintf('Initial Torque: [%f, %f, %f, %f, %f] Nm\n', torques(1, :));
+fprintf('Final Torque: [%f, %f, %f, %f, %f] Nm\n', torques(end, :));
+fprintf('Initial Kinetic Energy: %f J\n', kinetic_energy(1));
+fprintf('Final Kinetic Energy: %f J\n', kinetic_energy(end));
+fprintf('Initial Potential Energy: %f J\n', potential_energy(1));
+fprintf('Final Potential Energy: %f J\n', potential_energy(end));
+
+% Extract peak values
+fprintf('Peak Kinetic Energy: %f J\n', max(kinetic_energy));
+fprintf('Peak Potential Energy: %f J\n', max(potential_energy));
+fprintf('Peak Total Energy: %f J\n', max(total_energy));
+
+% Print peak torque values with original signs
 for j = 1:5
-    plot(time, rad2deg(theta_traj(:, j)), 'LineWidth', 2, 'DisplayName', ['Theta ' num2str(j)]);
+    [peak_torque_value, idx] = max(abs(torques(:, j)));
+    peak_torque = torques(idx, j);
+    fprintf('Joint %d Peak Torque: %f Nm\n', j, peak_torque);
+end
+
+% Plot joint angles, velocities, accelerations, torques, and energies
+figure;
+subplot(3, 1, 1);
+hold on;
+for j = 1:5
+    plot(time, theta_traj(:, j), 'LineWidth', 2, 'DisplayName', ['Theta ' num2str(j)]);
 end
 xlabel('Time (s)');
-ylabel('Joint Angles (deg)');
+ylabel('Joint Angles (rad)');
 title('Joint Angles over Time');
 legend('show');
 grid on;
 
-% Plot joint velocities over time
-figure;
+subplot(3, 1, 2);
 hold on;
 for j = 1:5
     plot(time, dtheta_traj(:, j), 'LineWidth', 2, 'DisplayName', ['dTheta ' num2str(j)]);
@@ -188,8 +256,7 @@ title('Joint Velocities over Time');
 legend('show');
 grid on;
 
-% Plot joint accelerations over time
-figure;
+subplot(3, 1, 3);
 hold on;
 for j = 1:5
     plot(time, ddtheta_traj(:, j), 'LineWidth', 2, 'DisplayName', ['ddTheta ' num2str(j)]);
@@ -200,19 +267,6 @@ title('Joint Accelerations over Time');
 legend('show');
 grid on;
 
-% Plot torques over time
-figure;
-hold on;
-for j = 1:5
-    plot(time, torques(:, j), 'LineWidth', 2, 'DisplayName', ['Torque ' num2str(j)]);
-end
-xlabel('Time (s)');
-ylabel('Torque (Nm)');
-title('Torques at Joints over Time');
-legend('show');
-grid on;
-
-% Plot energies over time
 figure;
 subplot(3, 1, 1);
 plot(time, kinetic_energy, 'r', 'LineWidth', 2);
@@ -235,86 +289,22 @@ ylabel('Total Energy (J)');
 title('Total Energy over Time');
 grid on;
 
-% Plot the 3D trajectory of the end effector
-figure;
-plot3(waypoints(:, 1), waypoints(:, 2), waypoints(:, 3), 'k--', 'LineWidth', 2);
-hold on;
-plot3(end_effector_positions(:, 1), end_effector_positions(:, 2), end_effector_positions(:, 3), 'r', 'LineWidth', 2);
-xlabel('X (m)');
-ylabel('Y (m)');
-zlabel('Z (m)');
-title('3D Trajectory of the End Effector');
-legend('Desired Path', 'Actual Path');
-grid on;
-axis equal;
-
-% Save animation as a video
-video_filename = 'robot_animation.avi';
-video_writer = VideoWriter(video_filename);
-open(video_writer);
-
-% Animate the robot along the trajectory and write frames to video
 figure;
 hold on;
+for j = 1:5
+    plot(time, torques(:, j), 'LineWidth', 2, 'DisplayName', ['Torque ' num2str(j)]);
+end
+xlabel('Time (s)');
+ylabel('Torque (Nm)');
+title('Torques at Joints over Time');
+legend('show');
 grid on;
-axis equal;
-xlabel('X');
-ylabel('Y');
-zlabel('Z');
-title('Robot Animation');
-view(3);
-robot_plot = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
-end_effector_plot = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
-base_label = text(-0.1, 0, 0, 'Base', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'blue', 'HorizontalAlignment', 'right');
-end_effector_label = text(-0.1, 0, 0, 'End Effector', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'red', 'HorizontalAlignment', 'right');
 
-% Plot the end effector trajectory
-plot3(end_effector_positions(:, 1), end_effector_positions(:, 2), end_effector_positions(:, 3), 'k--', 'LineWidth', 2);
-
-for i = 1:num_points
-    T_matrices = robot_configurations(i, :);
-    points = [0, 0, 0; T_matrices{1}(1:3, 4)'; T_matrices{2}(1:3, 4)'; T_matrices{3}(1:3, 4)'; T_matrices{4}(1:3, 4)'; T_matrices{5}(1:3, 4)'];
-    set(robot_plot, 'XData', points(:, 1), 'YData', points(:, 2), 'ZData', points(:, 3));
-    set(end_effector_plot, 'XData', points(end, 1), 'YData', points(end, 2), 'ZData', points(end, 3));
-    set(end_effector_label, 'Position', [points(end, 1) - 0.1, points(end, 2), points(end, 3)]);
-    drawnow;
-
-    % Capture frame and write to video
-    frame = getframe(gcf);
-    writeVideo(video_writer, frame);
-end
-
-close(video_writer);
-
-fprintf('Animation saved as %s\n', video_filename);
-
-% Function to compute trajectory, energies, and torques for a given configuration
-function [kinetic_energy, potential_energy, total_energy, torques, end_effector_positions, robot_configurations] = compute_trajectory(theta_traj, dtheta_traj, ddtheta_traj, time, q, T5, T_func, V_func, E_func, tau_func, A1, A2, A3, A4, A5)
-    num_steps = length(time);
-    kinetic_energy = zeros(num_steps, 1);
-    potential_energy = zeros(num_steps, 1);
-    total_energy = zeros(num_steps, 1);
-    torques = zeros(num_steps, 5);
-    end_effector_positions = zeros(num_steps, 3);
-    robot_configurations = cell(num_steps, 5);  % Store robot configurations for plotting
-
-    for i = 1:num_steps
-        q_vals = theta_traj(i, :)';
-        dq_vals = dtheta_traj(i, :)';
-        ddq_vals = ddtheta_traj(i, :)';
-
-        kinetic_energy(i) = T_func(q_vals, dq_vals);
-        potential_energy(i) = V_func(q_vals);
-        total_energy(i) = E_func(q_vals, dq_vals);
-        torques(i, :) = tau_func(q_vals, dq_vals, ddq_vals);
-
-        T_current = double(subs(T5, {q(1), q(2), q(3), q(4), q(5)}, q_vals.'));
-        end_effector_positions(i, :) = T_current(1:3, 4);
-
-        robot_configurations{i, 1} = double(subs(A1, q(1), q_vals(1)));
-        robot_configurations{i, 2} = double(robot_configurations{i, 1} * subs(A2, q(2), q_vals(2)));
-        robot_configurations{i, 3} = double(robot_configurations{i, 2} * subs(A3, q(3), q_vals(3)));
-        robot_configurations{i, 4} = double(robot_configurations{i, 3} * subs(A4, q(4), q_vals(4)));
-        robot_configurations{i, 5} = double(robot_configurations{i, 4} * subs(A5, q(5), q_vals(5)));
-    end
-end
+% Energy conservation validation
+figure;
+energy_difference = abs(total_energy - total_energy(1));
+plot(time, energy_difference, 'g', 'LineWidth', 2);
+xlabel('Time (s)');
+ylabel('Energy Difference (J)');
+title('Energy Conservation Validation');
+grid on;
