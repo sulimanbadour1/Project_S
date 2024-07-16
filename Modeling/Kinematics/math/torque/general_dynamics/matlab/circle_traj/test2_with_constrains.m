@@ -145,27 +145,20 @@ for i = 1:num_points
     
     eqns = [T5(1:3, 4) == target_position; constraint];
     
-    % Solve with constraints
-    sol = vpasolve(eqns, [theta1, theta2, theta3, theta4, theta5], initial_guess, ...
-                   'Random', true, ...
-                   'ReturnConditions', true, ...
-                   'IgnoreAnalyticConstraints', true);
+    % Solve the equations
+    sol = vpasolve(eqns, [theta1, theta2, theta3, theta4, theta5], initial_guess);
     
-    if isempty(sol.theta1)
-        fprintf('No solution found for point %d. Using initial guess.\n', i);
-        theta_traj(i, :) = initial_guess;  % Use initial guess
+    % Check if solution is found and within constraints
+    if ~isempty(sol.theta1) && all([sol.theta1, sol.theta2, sol.theta3, sol.theta4, sol.theta5] >= [theta1_min, theta2_min, theta3_min, theta4_min, theta5_min]) && ...
+       all([sol.theta1, sol.theta2, sol.theta3, sol.theta4, sol.theta5] <= [theta1_max, theta2_max, theta3_max, theta4_max, theta5_max])
+        theta_traj(i, :) = double([sol.theta1, sol.theta2, sol.theta3, sol.theta4, sol.theta5]);
+        initial_guess = theta_traj(i, :);  % Update initial guess for next iteration
     else
-        % Check constraints
-        if double(sol.theta1) < theta1_min || double(sol.theta1) > theta1_max || ...
-           double(sol.theta2) < theta2_min || double(sol.theta2) > theta2_max || ...
-           double(sol.theta3) < theta3_min || double(sol.theta3) > theta3_max || ...
-           double(sol.theta4) < theta4_min || double(sol.theta4) > theta4_max || ...
-           double(sol.theta5) < theta5_min || double(sol.theta5) > theta5_max
-            fprintf('Solution out of bounds for point %d. Using initial guess.\n', i);
-            theta_traj(i, :) = initial_guess;  % Use initial guess
+        fprintf('No valid solution found for point %d. Using previous solution.\n', i);
+        if i > 1
+            theta_traj(i, :) = theta_traj(i-1, :);  % Use previous solution
         else
-            theta_traj(i, :) = double([sol.theta1, sol.theta2, sol.theta3, sol.theta4, sol.theta5]);
-            initial_guess = theta_traj(i, :);  % Update initial guess for next iteration
+            theta_traj(i, :) = initial_guess;  % Use initial guess if no previous solution
         end
     end
 end

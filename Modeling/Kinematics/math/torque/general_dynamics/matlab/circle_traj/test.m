@@ -1,8 +1,8 @@
 % Define DH parameters
 d1 = 0.1;  % Link offset
 d5 = 0.1;  % Link offset
-a2 = 0.7;  % Link length
-a3 = 0.7;  % Link length
+a2 = 0.6;  % Link length
+a3 = 0.6;  % Link length
 alpha = [pi/2, 0, 0, pi/2, 0];  % Twist angles in radians
 
 % Define symbolic variables for joint angles and velocities
@@ -105,7 +105,7 @@ E_func = matlabFunction(E, 'Vars', {q, dq});
 tau_func = matlabFunction(G + M * ddq, 'Vars', {q, dq, ddq});
 
 % Define the simulation parameters
-t_final = 20;  % Total simulation time in seconds
+t_final = 60;  % Total simulation time in seconds
 num_points = 50;  % Number of points along the trajectory
 time = linspace(0, t_final, num_points);  % Time vector
 
@@ -116,7 +116,7 @@ printer_height = 0.4; % 400 mm
 printer_offset = 0.1; % 100 mm from the robot
 
 % Define the new center of the circle path, avoiding the 3D printer
-circle_radius = 0.1;  % Radius of the circle
+circle_radius = 0.32;  % Radius of the circle
 circle_center = [0.5 + printer_offset, 0.5 + printer_depth/2, 0.2];  % Center of the circle
 
 % Adjusting the theta_circle for a circular trajectory
