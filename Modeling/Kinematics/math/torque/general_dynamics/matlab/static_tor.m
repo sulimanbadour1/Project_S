@@ -157,11 +157,11 @@ subplot(1, 2, 1);
 bar(max_torque_values);
 xlabel('Joints');
 ylabel('Torque (Nm)');
-title('Maximum Dynamic Torques on Each Joint');
+title('Maximum Static Torques on Each Joint');
 grid on;
 
 % Print maximum torques
-disp('Maximum Dynamic Torques for given values:');
+disp('Maximum Static Torques for given values:');
 disp(max_torque_values);
 
 % Plot robot configurations for maximum torques
@@ -201,14 +201,14 @@ disp(max_torque_values);
 disp('Configurations for Maximum Torques (radians):');
 disp(max_configs);
 
-disp('Gravity vector')
-disp(G)
-
-disp('m')
-disp(M)
-
-
-disp('C')
-disp(C)
+% disp('Gravity vector')
+% disp(G)
+% 
+% disp('m')
+% disp(M)
+% 
+% 
+% disp('C')
+% disp(C)
 
 
