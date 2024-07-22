@@ -173,7 +173,7 @@ theta_1_range = np.linspace(-180, 180, 7)
 theta_2_range = np.linspace(-90, 90, 7)
 theta_3_range = np.linspace(-90, 90, 7)
 theta_4_range = np.linspace(-90, 90, 7)
-theta_5_range = np.linspace(0, 360, 7)
+theta_5_range = np.linspace(-180, 180, 7)
 
 # Create meshgrid for joint angles
 theta_1_vals, theta_2_vals, theta_3_vals, theta_4_vals, theta_5_vals = np.meshgrid(
