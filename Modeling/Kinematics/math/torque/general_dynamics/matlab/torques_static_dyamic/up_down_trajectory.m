@@ -14,7 +14,7 @@ syms ddtheta1 ddtheta2 ddtheta3 ddtheta4 ddtheta5 real
 masses = [1.0, 1.0, 1.0, 1.0, 1.0];
 mass_camera = 0.5;
 mass_lights = 0.5;
-g = 9.81;  % Gravitational acceleration
+g = -9.81;  % Gravitational acceleration
 
 % Define lengths of the links
 L1 = d1;
@@ -209,164 +209,110 @@ fprintf('Configuration 2 - Peak Kinetic Energy: %f J\n', max(kinetic_energy2));
 fprintf('Configuration 2 - Peak Potential Energy: %f J\n', max(potential_energy2));
 fprintf('Configuration 2 - Peak Total Energy: %f J\n', max(total_energy2));
 
-
 % Plot joint angles for both configurations in a new figure
 figure;
-subplot(2, 1, 1);
 hold on;
 for j = 1:5
-    plot(time, theta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Theta ' num2str(j)]);
+    plot(time, theta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow Up - Theta ' num2str(j)]);
+    plot(time, theta_traj2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - Theta ' num2str(j)]);
 end
 xlabel('Time (s)');
-ylabel('Joint Angles (deg)');
-title('Joint Angles over Time for Config 1');
+ylabel('Joint Angles (rad)');
+title('Joint Angles over Time');
 legend('show');
 grid on;
-
-subplot(2, 1, 2);
-hold on;
-for j = 1:5
-    plot(time, theta_traj2(:, j), 'LineWidth', 2, 'DisplayName', ['Theta ' num2str(j)]);
-end
-xlabel('Time (s)');
-ylabel('Joint Angles (deg)');
-title('Joint Angles over Time for Config 2');
-legend('show');
-grid on;
+hold off;
 
 % Plot joint velocities for both configurations in a new figure
 figure;
-subplot(2, 1, 1);
 hold on;
 for j = 1:5
-    plot(time, dtheta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['dTheta ' num2str(j)]);
+    plot(time, dtheta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow up - dTheta ' num2str(j)]);
+    plot(time, dtheta_traj2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - dTheta ' num2str(j)]);
 end
 xlabel('Time (s)');
 ylabel('Joint Velocities (rad/s)');
-title('Joint Velocities over Time for Config 1');
+title('Joint Velocities over Time');
 legend('show');
 grid on;
-
-subplot(2, 1, 2);
-hold on;
-for j = 1:5
-    plot(time, dtheta_traj2(:, j), 'LineWidth', 2, 'DisplayName', ['dTheta ' num2str(j)]);
-end
-xlabel('Time (s)');
-ylabel('Joint Velocities (rad/s)');
-title('Joint Velocities over Time for Config 2');
-legend('show');
-grid on;
+hold off;
 
 % Plot joint accelerations for both configurations in a new figure
 figure;
-subplot(2, 1, 1);
 hold on;
 for j = 1:5
-    plot(time, ddtheta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['ddTheta ' num2str(j)]);
+    plot(time, ddtheta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow up - ddTheta ' num2str(j)]);
+    plot(time, ddtheta_traj2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - ddTheta ' num2str(j)]);
 end
 xlabel('Time (s)');
 ylabel('Joint Accelerations (rad/s^2)');
-title('Joint Accelerations over Time for Config 1');
+title('Joint Accelerations over Time');
 legend('show');
 grid on;
-
-subplot(2, 1, 2);
-hold on;
-for j = 1:5
-    plot(time, ddtheta_traj2(:, j), 'LineWidth', 2, 'DisplayName', ['ddTheta ' num2str(j)]);
-end
-xlabel('Time (s)');
-ylabel('Joint Accelerations (rad/s^2)');
-title('Joint Accelerations over Time for Config 2');
-legend('show');
-grid on;
+hold off;
 
 % Plot torques for both configurations in a new figure
 figure;
-subplot(2, 1, 1);
 hold on;
 for j = 1:5
-    plot(time, torques1(:, j), 'LineWidth', 2, 'DisplayName', ['Torque ' num2str(j)]);
+    plot(time, torques1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow up - Torque ' num2str(j)]);
+    plot(time, torques2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - Torque ' num2str(j)]);
 end
 xlabel('Time (s)');
 ylabel('Torque (Nm)');
-title('Torques at Joints over Time for Config 1');
+title('Torques at Joints over Time');
 legend('show');
 grid on;
-
-subplot(2, 1, 2);
-hold on;
-for j = 1:5
-    plot(time, torques2(:, j), 'LineWidth', 2, 'DisplayName', ['Torque ' num2str(j)]);
-end
-xlabel('Time (s)');
-ylabel('Torque (Nm)');
-title('Torques at Joints over Time for Config 2');
-legend('show');
-grid on;
+hold off;
 
 % Plot energies for both configurations in a new figure
 figure;
-subplot(3, 2, 1);
-plot(time, kinetic_energy1, 'r', 'LineWidth', 2);
+subplot(3, 1, 1);
+hold on;
+plot(time, kinetic_energy1, 'r', 'LineWidth', 2, 'DisplayName', 'Elbow up - Kinetic Energy');
+plot(time, kinetic_energy2, '--r', 'LineWidth', 2, 'DisplayName', 'Elbow down - Kinetic Energy');
 xlabel('Time (s)');
 ylabel('Kinetic Energy (J)');
-title('Kinetic Energy over Time for Config 1');
+title('Kinetic Energy over Time');
+legend('show');
 grid on;
+hold off;
 
-subplot(3, 2, 3);
-plot(time, potential_energy1, 'b', 'LineWidth', 2);
+subplot(3, 1, 2);
+hold on;
+plot(time, potential_energy1, 'b', 'LineWidth', 2, 'DisplayName', 'Elbow up - Potential Energy');
+plot(time, potential_energy2, '--b', 'LineWidth', 2, 'DisplayName', 'Elbow down - Potential Energy');
 xlabel('Time (s)');
 ylabel('Potential Energy (J)');
-title('Potential Energy over Time for Config 1');
+title('Potential Energy over Time');
+legend('show');
 grid on;
+hold off;
 
-subplot(3, 2, 5);
-plot(time, total_energy1, 'k', 'LineWidth', 2);
+subplot(3, 1, 3);
+hold on;
+plot(time, total_energy1, 'k', 'LineWidth', 2, 'DisplayName', 'Elbow up - Total Energy');
+plot(time, total_energy2, '--k', 'LineWidth', 2, 'DisplayName', 'Elbow down - Total Energy');
 xlabel('Time (s)');
 ylabel('Total Energy (J)');
-title('Total Energy over Time for Config 1');
+title('Total Energy over Time');
+legend('show');
 grid on;
-
-subplot(3, 2, 2);
-plot(time, kinetic_energy2, 'r', 'LineWidth', 2);
-xlabel('Time (s)');
-ylabel('Kinetic Energy (J)');
-title('Kinetic Energy over Time for Config 2');
-grid on;
-
-subplot(3, 2, 4);
-plot(time, potential_energy2, 'b', 'LineWidth', 2);
-xlabel('Time (s)');
-ylabel('Potential Energy (J)');
-title('Potential Energy over Time for Config 2');
-grid on;
-
-subplot(3, 2, 6);
-plot(time, total_energy2, 'k', 'LineWidth', 2);
-xlabel('Time (s)');
-ylabel('Total Energy (J)');
-title('Total Energy over Time for Config 2');
-grid on;
+hold off;
 
 % Energy conservation validation for both configurations in a new figure
 figure;
-subplot(2, 1, 1);
+hold on;
 energy_difference1 = abs(total_energy1 - total_energy1(1));
-plot(time, energy_difference1, 'g', 'LineWidth', 2);
-xlabel('Time (s)');
-ylabel('Energy Difference (J)');
-title('Energy Conservation Validation for Config 1');
-grid on;
-
-subplot(2, 1, 2);
+plot(time, energy_difference1, 'g', 'LineWidth', 2, 'DisplayName', 'Elbow up - Energy Difference');
 energy_difference2 = abs(total_energy2 - total_energy2(1));
-plot(time, energy_difference2, 'g', 'LineWidth', 2);
+plot(time, energy_difference2, '--g', 'LineWidth', 2, 'DisplayName', 'Elbow down - Energy Difference');
 xlabel('Time (s)');
 ylabel('Energy Difference (J)');
-title('Energy Conservation Validation for Config 2');
+title('Energy Conservation Validation');
+legend('show');
 grid on;
+hold off;
 
 % Animate the robot for both configurations
 figure;
@@ -377,14 +323,14 @@ axis equal;
 xlabel('X');
 ylabel('Y');
 zlabel('Z');
-title('End Effector Trajectory and Robot Animation for Config 1');
+title('End Effector Trajectory and Robot Animation for Elbow up');
 view(3);
 robot_plot1 = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
 end_effector_plot1 = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
 base_label1 = text(-0.1, 0, 0, 'Base', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'blue', 'HorizontalAlignment', 'right');
 end_effector_label1 = text(-0.1, 0, 0, 'End Effector', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'red', 'HorizontalAlignment', 'right');
 
-% Plot the end effector trajectory for config 1
+% Plot the end effector trajectory for Elbow up
 plot3(end_effector_positions1(:, 1), end_effector_positions1(:, 2), end_effector_positions1(:, 3), 'k--', 'LineWidth', 2);
 
 subplot(1, 2, 2);
@@ -394,26 +340,26 @@ axis equal;
 xlabel('X');
 ylabel('Y');
 zlabel('Z');
-title('End Effector Trajectory and Robot Animation for Config 2');
+title('End Effector Trajectory and Robot Animation for Elbow down');
 view(3);
 robot_plot2 = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
 end_effector_plot2 = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
 base_label2 = text(-0.1, 0, 0, 'Base', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'blue', 'HorizontalAlignment', 'right');
 end_effector_label2 = text(-0.1, 0, 0, 'End Effector', 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'red', 'HorizontalAlignment', 'right');
 
-% Plot the end effector trajectory for config 2
+% Plot the end effector trajectory for Elbow down
 plot3(end_effector_positions2(:, 1), end_effector_positions2(:, 2), end_effector_positions2(:, 3), 'k--', 'LineWidth', 2);
 
 % Animate both configurations
 for i = 1:num_steps
-    % Config 1
+    % Elbow up
     T_matrices1 = robot_configurations1(i, :);
     points1 = [0, 0, 0; T_matrices1{1}(1:3, 4)'; T_matrices1{2}(1:3, 4)'; T_matrices1{3}(1:3, 4)'; T_matrices1{4}(1:3, 4)'; T_matrices1{5}(1:3, 4)'];
     set(robot_plot1, 'XData', points1(:, 1), 'YData', points1(:, 2), 'ZData', points1(:, 3));
     set(end_effector_plot1, 'XData', points1(end, 1), 'YData', points1(end, 2), 'ZData', points1(end, 3));
     set(end_effector_label1, 'Position', [points1(end, 1) - 0.1, points1(end, 2), points1(end, 3)]);
 
-    % Config 2
+    % Elbow down
     T_matrices2 = robot_configurations2(i, :);
     points2 = [0, 0, 0; T_matrices2{1}(1:3, 4)'; T_matrices2{2}(1:3, 4)'; T_matrices2{3}(1:3, 4)'; T_matrices2{4}(1:3, 4)'; T_matrices2{5}(1:3, 4)'];
     set(robot_plot2, 'XData', points2(:, 1), 'YData', points2(:, 2), 'ZData', points2(:, 3));
@@ -424,10 +370,10 @@ for i = 1:num_steps
 end
 
 % Print end effector positions
-disp('End Effector Positions for Config 1:');
+disp('End Effector Positions for Elbow up:');
 disp(end_effector_positions1);
 
-disp('End Effector Positions for Config 2:');
+disp('End Effector Positions for Elbow down:');
 disp(end_effector_positions2);
 
 fprintf(" Writing new ")
@@ -454,9 +400,6 @@ for j = 1:5
     peak_torque2 = torques2(idx, j);
     fprintf('Configuration 2 - Joint %d Peak Torque: %f Nm\n', j, peak_torque2);
 end
-
-
-
 
 function [theta_traj, dtheta_traj, ddtheta_traj, kinetic_energy, potential_energy, total_energy, torques, end_effector_positions, robot_configurations, coeffs] = compute_trajectory(final_config, t_final, num_steps, time, q, T5, T_func, V_func, E_func, tau_func, A1, A2, A3, A4, A5)
     % Quintic polynomial trajectory coefficients for each joint
