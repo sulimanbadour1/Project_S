@@ -38,7 +38,7 @@ def DH_matrix(theta, d, a, alpha):
 
 # Define joint angles in radians
 
-angles = {theta1: 0, theta2: 1.75, theta3: -1.94, theta4: 1.75, theta5: 0}
+angles = {theta1: -3.14, theta2: -3.14, theta3: -0.35, theta4: 1.75, theta5: -3.14}
 
 # Compute transformation matrices
 T1 = DH_matrix(theta1, d1, a1, alpha1).subs(angles)
