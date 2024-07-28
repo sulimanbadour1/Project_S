@@ -209,12 +209,13 @@ fprintf('Configuration 2 - Peak Kinetic Energy: %f J\n', max(kinetic_energy2));
 fprintf('Configuration 2 - Peak Potential Energy: %f J\n', max(potential_energy2));
 fprintf('Configuration 2 - Peak Total Energy: %f J\n', max(total_energy2));
 
-% Plot joint angles for both configurations in a new figure
+% Subplot for joint angles, velocities, and accelerations
 figure;
+subplot(3,1,1);
 hold on;
 for j = 1:5
-    plot(time, theta_traj1(:, j), 'LineWidth', 3, 'DisplayName', ['Elbow Up - Theta ' num2str(j)]);
-    plot(time, theta_traj2(:, j), '--', 'LineWidth', 3, 'DisplayName', ['Elbow down - Theta ' num2str(j)]);
+    plot(time, theta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow Up - Theta ' num2str(j)]);
+    plot(time, theta_traj2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - Theta ' num2str(j)]);
 end
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Joint Angles (rad)', 'FontSize', 14, 'FontWeight', 'bold');
@@ -224,12 +225,11 @@ grid on;
 set(gca, 'FontSize', 12, 'FontWeight', 'bold');
 hold off;
 
-% Plot joint velocities for both configurations in a new figure
-figure;
+subplot(3,1,2);
 hold on;
 for j = 1:5
-    plot(time, dtheta_traj1(:, j), 'LineWidth', 3, 'DisplayName', ['Elbow up - dTheta ' num2str(j)]);
-    plot(time, dtheta_traj2(:, j), '--', 'LineWidth', 3, 'DisplayName', ['Elbow down - dTheta ' num2str(j)]);
+    plot(time, dtheta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow up - dTheta ' num2str(j)]);
+    plot(time, dtheta_traj2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - dTheta ' num2str(j)]);
 end
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Joint Velocities (rad/s)', 'FontSize', 14, 'FontWeight', 'bold');
@@ -239,12 +239,11 @@ grid on;
 set(gca, 'FontSize', 12, 'FontWeight', 'bold');
 hold off;
 
-% Plot joint accelerations for both configurations in a new figure
-figure;
+subplot(3,1,3);
 hold on;
 for j = 1:5
-    plot(time, ddtheta_traj1(:, j), 'LineWidth', 3, 'DisplayName', ['Elbow up - ddTheta ' num2str(j)]);
-    plot(time, ddtheta_traj2(:, j), '--', 'LineWidth', 3, 'DisplayName', ['Elbow down - ddTheta ' num2str(j)]);
+    plot(time, ddtheta_traj1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow up - ddTheta ' num2str(j)]);
+    plot(time, ddtheta_traj2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - ddTheta ' num2str(j)]);
 end
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Joint Accelerations (rad/s^2)', 'FontSize', 14, 'FontWeight', 'bold');
@@ -254,12 +253,12 @@ grid on;
 set(gca, 'FontSize', 12, 'FontWeight', 'bold');
 hold off;
 
-% Plot torques for both configurations in a new figure
+% Subplot for torques
 figure;
 hold on;
 for j = 1:5
-    plot(time, torques1(:, j), 'LineWidth', 3, 'DisplayName', ['Elbow up - Torque ' num2str(j)]);
-    plot(time, torques2(:, j), '--', 'LineWidth', 3, 'DisplayName', ['Elbow down - Torque ' num2str(j)]);
+    plot(time, torques1(:, j), 'LineWidth', 2, 'DisplayName', ['Elbow up - Torque ' num2str(j)]);
+    plot(time, torques2(:, j), '--', 'LineWidth', 2, 'DisplayName', ['Elbow down - Torque ' num2str(j)]);
 end
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Torque (Nm)', 'FontSize', 14, 'FontWeight', 'bold');
@@ -269,12 +268,12 @@ grid on;
 set(gca, 'FontSize', 12, 'FontWeight', 'bold');
 hold off;
 
-% Plot energies for both configurations in a new figure
+% Subplot for energies
 figure;
-subplot(3, 1, 1);
+subplot(3,1,1);
 hold on;
-plot(time, kinetic_energy1, 'r', 'LineWidth', 3, 'DisplayName', 'Elbow up - Kinetic Energy');
-plot(time, kinetic_energy2, '--r', 'LineWidth', 3, 'DisplayName', 'Elbow down - Kinetic Energy');
+plot(time, kinetic_energy1, 'r', 'LineWidth', 2, 'DisplayName', 'Elbow up - Kinetic Energy');
+plot(time, kinetic_energy2, '--r', 'LineWidth', 2, 'DisplayName', 'Elbow down - Kinetic Energy');
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Kinetic Energy (J)', 'FontSize', 14, 'FontWeight', 'bold');
 title('Kinetic Energy over Time', 'FontSize', 16, 'FontWeight', 'bold');
@@ -283,10 +282,10 @@ grid on;
 set(gca, 'FontSize', 12, 'FontWeight', 'bold');
 hold off;
 
-subplot(3, 1, 2);
+subplot(3,1,2);
 hold on;
-plot(time, potential_energy1, 'b', 'LineWidth', 3, 'DisplayName', 'Elbow up - Potential Energy');
-plot(time, potential_energy2, '--b', 'LineWidth', 3, 'DisplayName', 'Elbow down - Potential Energy');
+plot(time, potential_energy1, 'b', 'LineWidth', 2, 'DisplayName', 'Elbow up - Potential Energy');
+plot(time, potential_energy2, '--b', 'LineWidth', 2, 'DisplayName', 'Elbow down - Potential Energy');
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Potential Energy (J)', 'FontSize', 14, 'FontWeight', 'bold');
 title('Potential Energy over Time', 'FontSize', 16, 'FontWeight', 'bold');
@@ -295,10 +294,10 @@ grid on;
 set(gca, 'FontSize', 12, 'FontWeight', 'bold');
 hold off;
 
-subplot(3, 1, 3);
+subplot(3,1,3);
 hold on;
-plot(time, total_energy1, 'k', 'LineWidth', 3, 'DisplayName', 'Elbow up - Total Energy');
-plot(time, total_energy2, '--k', 'LineWidth', 3, 'DisplayName', 'Elbow down - Total Energy');
+plot(time, total_energy1, 'k', 'LineWidth', 2, 'DisplayName', 'Elbow up - Total Energy');
+plot(time, total_energy2, '--k', 'LineWidth', 2, 'DisplayName', 'Elbow down - Total Energy');
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Total Energy (J)', 'FontSize', 14, 'FontWeight', 'bold');
 title('Total Energy over Time', 'FontSize', 16, 'FontWeight', 'bold');
@@ -311,9 +310,9 @@ hold off;
 figure;
 hold on;
 energy_difference1 = abs(total_energy1 - total_energy1(1));
-plot(time, energy_difference1, 'g', 'LineWidth', 3, 'DisplayName', 'Elbow up - Energy Difference');
+plot(time, energy_difference1, 'g', 'LineWidth', 2, 'DisplayName', 'Elbow up - Energy Difference');
 energy_difference2 = abs(total_energy2 - total_energy2(1));
-plot(time, energy_difference2, '--g', 'LineWidth', 3, 'DisplayName', 'Elbow down - Energy Difference');
+plot(time, energy_difference2, '--g', 'LineWidth', 2, 'DisplayName', 'Elbow down - Energy Difference');
 xlabel('Time (s)', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Energy Difference (J)', 'FontSize', 14, 'FontWeight', 'bold');
 title('Energy Conservation Validation', 'FontSize', 16, 'FontWeight', 'bold');
@@ -333,7 +332,7 @@ ylabel('Y', 'FontSize', 14, 'FontWeight', 'bold');
 zlabel('Z', 'FontSize', 14, 'FontWeight', 'bold');
 title('End Effector Trajectory and Robot Animation for Elbow up', 'FontSize', 16, 'FontWeight', 'bold');
 view(3);
-robot_plot1 = plot3(0, 0, 0, '-o', 'LineWidth', 3, 'MarkerSize', 10);
+robot_plot1 = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
 end_effector_plot1 = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
 base_label1 = text(-0.1, 0, 0, 'Base', 'FontSize', 14, 'FontWeight', 'bold', 'Color', 'blue', 'HorizontalAlignment', 'right');
 end_effector_label1 = text(-0.1, 0, 0, 'End Effector', 'FontSize', 14, 'FontWeight', 'bold', 'Color', 'red', 'HorizontalAlignment', 'right');
@@ -350,7 +349,7 @@ ylabel('Y', 'FontSize', 14, 'FontWeight', 'bold');
 zlabel('Z', 'FontSize', 14, 'FontWeight', 'bold');
 title('End Effector Trajectory and Robot Animation for Elbow down', 'FontSize', 16, 'FontWeight', 'bold');
 view(3);
-robot_plot2 = plot3(0, 0, 0, '-o', 'LineWidth', 3, 'MarkerSize', 10);
+robot_plot2 = plot3(0, 0, 0, '-o', 'LineWidth', 2, 'MarkerSize', 10);
 end_effector_plot2 = plot3(0, 0, 0, 'r*', 'MarkerSize', 10);
 base_label2 = text(-0.1, 0, 0, 'Base', 'FontSize', 14, 'FontWeight', 'bold', 'Color', 'blue', 'HorizontalAlignment', 'right');
 end_effector_label2 = text(-0.1, 0, 0, 'End Effector', 'FontSize', 14, 'FontWeight', 'bold', 'Color', 'red', 'HorizontalAlignment', 'right');
