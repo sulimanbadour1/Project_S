@@ -117,19 +117,37 @@ print("\nSingular configurations and their ranks:")
 for config, rank in singularities:
     print(f"Configuration (degrees): {np.rad2deg(config)}, Rank: {rank}")
 
-# Visualize the distribution of ranks using a histogram
-plt.figure()
-plt.hist(all_ranks, bins=np.arange(2.5, 6.5, 1), edgecolor="black", align="left")
-plt.xlabel("Rank of Jacobian")
-plt.ylabel("Frequency")
-plt.title("Distribution of Jacobian Ranks")
-plt.grid(True)
+# Enhanced Visualization of the distribution of ranks using a histogram
+plt.figure(figsize=(10, 6))
+plt.hist(
+    all_ranks,
+    bins=np.arange(2.5, 6.5, 1),
+    edgecolor="black",
+    align="left",
+    color="skyblue",
+)
+plt.xlabel("Rank of Jacobian", fontsize=14)
+plt.ylabel("Frequency", fontsize=14)
+plt.title("Distribution of Jacobian Ranks", fontsize=16)
+plt.xticks(ticks=np.arange(3, 6), labels=["Rank 3", "Rank 4", "Rank 5"], fontsize=12)
+plt.yticks(fontsize=12)
+plt.grid(True, linestyle="--", alpha=0.7)
+for i in range(3, 6):
+    plt.text(
+        i,
+        all_ranks.count(i),
+        str(all_ranks.count(i)),
+        ha="center",
+        va="bottom",
+        fontsize=12,
+    )
+plt.tight_layout()
 plt.show()
 
 
 # Visualize the robot configurations that are singular
 def plot_singular_robots(singularities):
-    fig = plt.figure(figsize=(18, 6))
+    fig = plt.figure(figsize=(12, 4))  # Adjusted figure size for thinner charts
 
     for idx, (thetas, rank) in enumerate(singularities):
         ax = fig.add_subplot(1, 3, idx + 1, projection="3d")
@@ -145,7 +163,9 @@ def plot_singular_robots(singularities):
         ax.set_ylabel("Y")
         ax.set_zlabel("Z")
         ax.set_title(f"Singular Configuration {idx + 1}")
-        ax.legend()
+        ax.legend(fontsize=10)  # Adjust the fontsize for better readability
+        for i, (x, y, z) in enumerate(zip(xs, ys, zs)):
+            ax.text(x, y, z, f"P{i}", fontsize=8, color="red")
 
     plt.tight_layout()
     plt.show()

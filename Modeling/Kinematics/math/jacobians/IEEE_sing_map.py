@@ -10,17 +10,11 @@ a2 = 0.5
 a3 = 0.5
 alpha = np.deg2rad([90, 0, 0, 90, 0])
 
-# Define the joint limits (in radians)
-joint_limits = [
-    (-np.pi, np.pi),  # theta1
-    (-np.pi, np.pi),  # theta3
-    (-np.pi, np.pi),  # theta3
-    (-np.pi, np.pi),  # theta4
-    (-np.pi, np.pi),  # theta5
-]
+# Define the range of joint angles (in radians)
+theta_range = np.deg2rad(np.arange(-180, 181, 5))
 
 # Number of random samples to generate
-num_samples = 5000
+num_samples = 4000
 
 
 # Helper function to create a transformation matrix from DH parameters
@@ -99,12 +93,12 @@ def compute_transforms(thetas):
 
 
 # Analyze singularities and workspace using random sampling
-def analyze_singularities_workspace(joint_limits, num_samples):
+def analyze_singularities_workspace(theta_range, num_samples):
     singularities = []
     workspace_points = []
 
     for _ in range(num_samples):
-        thetas = [random.uniform(*joint_limits[i]) for i in range(5)]
+        thetas = [random.choice(theta_range) for _ in range(5)]
         J = compute_jacobian(thetas)
         rank = np.linalg.matrix_rank(J)
         transforms = compute_transforms(thetas)
@@ -119,56 +113,46 @@ def analyze_singularities_workspace(joint_limits, num_samples):
 
 # Analyze the singularities and workspace
 singularities, workspace_points = analyze_singularities_workspace(
-    joint_limits, num_samples
+    theta_range, num_samples
 )
 
 
 # Plot the singularity map and workspace
 def plot_singularity_workspace_map(singularities, workspace_points):
-    fig = plt.figure(figsize=(18, 6))
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
 
-    # Define the views
-    views = [
-        ("Top View", 0, 90),
-        ("Front View", 0, 0),
-        ("Side View", 90, 0),
-    ]
+    # Plot workspace points
+    workspace_points_np = np.array(workspace_points)
+    ax.scatter(
+        workspace_points_np[:, 0],
+        workspace_points_np[:, 1],
+        workspace_points_np[:, 2],
+        c="b",
+        marker="^",
+        label="Workspace",
+        alpha=0.3,
+    )
 
-    # Plot each view
-    for i, (view_name, elev, azim) in enumerate(views, 1):
-        ax = fig.add_subplot(1, 3, i, projection="3d")
+    # Plot singularities in x, y, z workspace
+    for pos, rank in singularities:
+        ax.scatter(*pos, c="r", marker="o", label="Singularity Point")
 
-        # Plot workspace points
-        workspace_points_np = np.array(workspace_points)
-        ax.scatter(
-            workspace_points_np[:, 0],
-            workspace_points_np[:, 1],
-            workspace_points_np[:, 2],
-            c="b",
-            marker="^",
-            label="Workspace",
-            alpha=0.3,
-        )
+    # Set view
+    ax.view_init(elev=20, azim=30)
 
-        # Plot singularities in x, y, z workspace
-        for pos, rank in singularities:
-            ax.scatter(*pos, c="r", marker="o", label="Singularity Point")
+    # Add labels and title
+    ax.set_xlabel("X (m)", fontsize=12)
+    ax.set_ylabel("Y (m)", fontsize=12)
+    ax.set_zlabel("Z (m)", fontsize=12)
+    ax.set_title("Singularity and Workspace Map", fontsize=15)
 
-        # Set view
-        ax.view_init(elev=elev, azim=azim)
+    # Add legend
+    handles, labels = ax.get_legend_handles_labels()
+    unique_labels = dict(zip(labels, handles))
+    legend = ax.legend(unique_labels.values(), unique_labels.keys(), fontsize=12)
+    plt.setp(legend.get_texts(), fontsize="14")  # Larger legend font
 
-        # Add labels and title
-        ax.set_xlabel("X (m)")
-        ax.set_ylabel("Y (m)")
-        ax.set_zlabel("Z (m)")
-        ax.set_title(view_name)
-
-        # Add legend
-        handles, labels = ax.get_legend_handles_labels()
-        unique_labels = dict(zip(labels, handles))
-        ax.legend(unique_labels.values(), unique_labels.keys())
-
-    plt.tight_layout()
     plt.show()
 
 
