@@ -75,7 +75,7 @@ def plot_robot(ax, joint_positions, theta1, theta2, theta3, theta4, end_effector
     x, y, z = zip(*joint_positions)
 
     # Plot the robot
-    ax.plot(x, y, z, "o-", markersize=10, label="Robot Arm")
+    ax.plot(x, y, z, "o-", markersize=10, label="Robot Arm", linewidth=2)
     ax.scatter(x, y, z, c="k")
 
     # Add text labels for the links and lengths
@@ -86,21 +86,58 @@ def plot_robot(ax, joint_positions, theta1, theta2, theta3, theta4, end_effector
             (z[i] + z[i + 1]) / 2,
             f"Link {i + 1}",
             color="black",
+            fontsize=10,
+            fontweight="bold",
         )
 
     # Add text for joint angles
-    ax.text2D(0.05, 0.95, f"Theta1: {theta1:.2f}°", transform=ax.transAxes, color="red")
-    ax.text2D(0.05, 0.90, f"Theta2: {theta2:.2f}°", transform=ax.transAxes, color="red")
-    ax.text2D(0.05, 0.85, f"Theta3: {theta3:.2f}°", transform=ax.transAxes, color="red")
-    ax.text2D(0.05, 0.80, f"Theta4: {theta4:.2f}°", transform=ax.transAxes, color="red")
+    ax.text2D(
+        0.05,
+        0.95,
+        f"Theta1: {theta1:.2f}°",
+        transform=ax.transAxes,
+        color="red",
+        fontsize=12,
+        fontweight="bold",
+    )
+    ax.text2D(
+        0.05,
+        0.90,
+        f"Theta2: {theta2:.2f}°",
+        transform=ax.transAxes,
+        color="red",
+        fontsize=12,
+        fontweight="bold",
+    )
+    ax.text2D(
+        0.05,
+        0.85,
+        f"Theta3: {theta3:.2f}°",
+        transform=ax.transAxes,
+        color="red",
+        fontsize=12,
+        fontweight="bold",
+    )
+    ax.text2D(
+        0.05,
+        0.80,
+        f"Theta4: {theta4:.2f}°",
+        transform=ax.transAxes,
+        color="red",
+        fontsize=12,
+        fontweight="bold",
+    )
 
-    # Add text for end effector position
+    # Add text for end effector position with units
     ax.text2D(
         0.05,
         0.75,
-        f"End Effector Position: ({end_effector_pos[0]:.2f}, {end_effector_pos[1]:.2f}, {end_effector_pos[2]:.2f})",
+        f"End Effector Position: ({end_effector_pos[0]:.2f} m, "
+        f"{end_effector_pos[1]:.2f} m, {end_effector_pos[2]:.2f} m)",
         transform=ax.transAxes,
         color="red",
+        fontsize=12,
+        fontweight="bold",
     )
 
 
@@ -120,10 +157,10 @@ joint_angles = [
 # Create the static figure
 fig_static = plt.figure()
 ax_static = fig_static.add_subplot(111, projection="3d")
-ax_static.set_xlabel("X axis")
-ax_static.set_ylabel("Y axis")
-ax_static.set_zlabel("Z axis")
-ax_static.set_title("3D Robot Configuration")
+ax_static.set_xlabel("X axis (m)", fontsize=12, fontweight="bold")
+ax_static.set_ylabel("Y axis (m)", fontsize=12, fontweight="bold")
+ax_static.set_zlabel("Z axis (m)", fontsize=12, fontweight="bold")
+ax_static.set_title("3D Robot Configuration", fontsize=14, fontweight="bold")
 ax_static.set_xlim([-1, 1])
 ax_static.set_ylim([-1, 1])
 ax_static.set_zlim([0, 1])
@@ -168,10 +205,10 @@ plt.show()
 # Create the animation
 fig_anim = plt.figure()
 ax_anim = fig_anim.add_subplot(111, projection="3d")
-ax_anim.set_xlabel("X axis")
-ax_anim.set_ylabel("Y axis")
-ax_anim.set_zlabel("Z axis")
-ax_anim.set_title("3D Robot Configuration")
+ax_anim.set_xlabel("X axis (m)", fontsize=12, fontweight="bold")
+ax_anim.set_ylabel("Y axis (m)", fontsize=12, fontweight="bold")
+ax_anim.set_zlabel("Z axis (m)", fontsize=12, fontweight="bold")
+ax_anim.set_title("3D Robot Configuration", fontsize=14, fontweight="bold")
 ax_anim.set_xlim([-1, 1])
 ax_anim.set_ylim([-1, 1])
 ax_anim.set_zlim([0, 1])
@@ -212,8 +249,8 @@ def animate(i):
 # Create the animation
 ani = FuncAnimation(fig_anim, animate, frames=num_points, init_func=init, blit=True)
 
-# Save the animation as a GIF
-ani.save("robot_animation_sinusoidal.gif", writer=PillowWriter(fps=20))
+# Save the animation as a GIF with the updated text properties
+ani.save("robot_animation_sinusoidal_with_units.gif", writer=PillowWriter(fps=20))
 
 # Show the animation
 plt.show()
