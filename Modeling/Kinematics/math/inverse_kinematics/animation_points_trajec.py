@@ -217,6 +217,10 @@ ax_anim.set_zlim([0, 1])
 # Initialization function for the animation
 def init():
     ax_anim.clear()
+    ax_anim.set_xlabel("X axis (m)", fontsize=12, fontweight="bold")
+    ax_anim.set_ylabel("Y axis (m)", fontsize=12, fontweight="bold")
+    ax_anim.set_zlabel("Z axis (m)", fontsize=12, fontweight="bold")
+    ax_anim.set_title("3D Robot Configuration", fontsize=14, fontweight="bold")
     ax_anim.set_xlim([-1, 1])
     ax_anim.set_ylim([-1, 1])
     ax_anim.set_zlim([0, 1])
@@ -226,6 +230,10 @@ def init():
 # Animation function
 def animate(i):
     ax_anim.clear()
+    ax_anim.set_xlabel("X axis (m)", fontsize=12, fontweight="bold")
+    ax_anim.set_ylabel("Y axis (m)", fontsize=12, fontweight="bold")
+    ax_anim.set_zlabel("Z axis (m)", fontsize=12, fontweight="bold")
+    ax_anim.set_title("3D Robot Configuration", fontsize=14, fontweight="bold")
     ax_anim.set_xlim([-1, 1])
     ax_anim.set_ylim([-1, 1])
     ax_anim.set_zlim([0, 1])

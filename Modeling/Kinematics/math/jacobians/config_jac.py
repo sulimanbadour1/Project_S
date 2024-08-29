@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import random
 
-# Define DH parameters
-d1 = 0.1
-d5 = 0.1
-a2 = 0.5
-a3 = 0.5
+# Define DH parameters with units in meters (m) and radians
+d1 = 0.1  # meters
+d5 = 0.1  # meters
+a2 = 0.5  # meters
+a3 = 0.5  # meters
 alpha = np.deg2rad([90, 0, 0, 90, 0])
 
 # Define the range of joint angles (in radians)
@@ -127,7 +127,7 @@ plt.hist(
     color="skyblue",
 )
 plt.xlabel("Rank of Jacobian", fontsize=14)
-plt.ylabel("Frequency", fontsize=14)
+plt.ylabel("Frequency (Number of Configs)", fontsize=14)
 plt.title("Distribution of Jacobian Ranks", fontsize=16)
 plt.xticks(ticks=np.arange(3, 6), labels=["Rank 3", "Rank 4", "Rank 5"], fontsize=12)
 plt.yticks(fontsize=12)
@@ -158,14 +158,24 @@ def plot_singular_robots(singularities):
             ys.append(T[1, 3])
             zs.append(T[2, 3])
 
-        ax.plot(xs, ys, zs, "o-", label=f"Rank {rank}\nAngles {np.rad2deg(thetas)}")
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
+        ax.plot(
+            xs, ys, zs, "o-", label=f"Rank {rank}\nAngles {np.rad2deg(thetas)} degrees"
+        )
+        ax.set_xlabel("X (m)", fontsize=10, fontweight="bold")
+        ax.set_ylabel("Y (m)", fontsize=10, fontweight="bold")
+        ax.set_zlabel("Z (m)", fontsize=10, fontweight="bold")
         ax.set_title(f"Singular Configuration {idx + 1}")
         ax.legend(fontsize=10)  # Adjust the fontsize for better readability
         for i, (x, y, z) in enumerate(zip(xs, ys, zs)):
-            ax.text(x, y, z, f"P{i}", fontsize=8, color="red")
+            ax.text(
+                x,
+                y,
+                z,
+                f"P{i}",
+                fontsize=8,
+                fontweight="bold",
+                color="red",
+            )
 
     plt.tight_layout()
     plt.show()
